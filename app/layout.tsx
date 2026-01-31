@@ -34,7 +34,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="fixed inset-0 z-[-1] bg-grid-small-white dark:bg-grid-small-white bg-grid-small-black pointer-events-none opacity-50 dark:opacity-100 transition-opacity" />
+          <div className="fixed inset-0 z-[-1] bg-grid-small pointer-events-none opacity-100 transition-opacity" />
           <div className="relative z-0">
             {children}
           </div>
