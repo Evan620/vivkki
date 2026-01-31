@@ -24,6 +24,14 @@
   --radius: 0.5rem;
 }
 
+:root {
+  --grid-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  --grid-color: rgba(255, 255, 255, 0.5);
+}
+
 /* Light Theme overrides if needed, accessible via .light class */
 .light {
   --background: #ffffff;
@@ -81,15 +89,9 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Subtle Grid Background for that "cool" tech feel */
-.bg-grid-small-white {
+/* Unified Grid Background */
+.bg-grid-small {
   background-size: 40px 40px;
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.5) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.5) 1px, transparent 1px);
-}
-
-.bg-grid-small-black {
-  background-size: 40px 40px;
-  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-image: linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
 }
