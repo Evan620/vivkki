@@ -1,13 +1,17 @@
 import { Search, Bell, Plus, RefreshCw } from "lucide-react";
 import { ModeToggle } from "@/components/ModeToggle";
 
-export function Header() {
+interface HeaderProps {
+    pageName?: string;
+}
+
+export function Header({ pageName = "Dashboard" }: HeaderProps) {
     return (
         <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm px-6 flex items-center justify-between sticky top-0 z-30">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">Home</span>
                 <span>/</span>
-                <span>Dashboard</span>
+                <span>{pageName}</span>
             </div>
 
             <div className="flex items-center gap-4">
