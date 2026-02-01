@@ -1,45 +1,51 @@
-import { FileText, Phone, Mail, User } from "lucide-react";
+import { FileText, Phone, Mail, User, Activity } from "lucide-react";
+import { formatDistanceToNow, parseISO } from 'date-fns';
 
-const activities = [
-    {
-        id: 1,
-        text: "Case note added: Client called for an update. Sent Jim an email. -DS",
-        date: "Jan 31, 12:08 AM",
-        icon: Phone,
-    },
-    {
-        id: 2,
-        text: "Case note added: Uploaded BCBS Letter to case file. - DS",
-        date: "Jan 30, 07:24 PM",
-        icon: FileText,
-    },
-    {
-        id: 3,
-        text: "First party claim information updated",
-        date: "Jan 30, 07:18 PM",
-        icon: User,
-    },
-    {
-        id: 4,
-        text: "Case note added: Saved new adjuster info and updated case. - DS",
-        date: "Jan 30, 07:15 PM",
-        icon: User,
-    },
-    {
-        id: 5,
-        text: 'Stage/status automatically updated to "Processing - Treating" after generating 1st Party Letter of Representation',
-        date: "Jan 30, 08:11 AM",
-        icon: FileText,
-    },
-];
+export interface ActivityItem {
+    id: number | string;
+    text: string;
+    date: string;
+    icon: any; // Lucide icon
+}
 
-export function RecentActivity() {
+interface RecentActivityProps {
+    activities: {
+        id: number | string;
+        description: string;
+        created_at: string;
+        action_type?: string;
+    }[];
+}
+
+export function RecentActivity({ activities }: RecentActivityProps) {
+
+    const getIcon = (actionType: string | undefined) => {
+        switch (actionType?.toLowerCase()) {
+            case 'call': return Phone;
+            case 'email': return Mail;
+            case 'user': return User;
+            case 'document': return FileText;
+            default: return Activity;
+        }
+    };
+
+    const formattedActivities = activities.map(act => ({
+        id: act.id,
+        text: act.description,
+        date: act.created_at ? formatDistanceToNow(parseISO(act.created_at), { addSuffix: true }) : 'Unknown date',
+        icon: getIcon(act.action_type)
+    }));
+
+    if (formattedActivities.length === 0) {
+        return <div className="text-muted-foreground text-sm">No recent activity.</div>;
+    }
+
     return (
         <div className="space-y-6">
-            {activities.map((activity, index) => (
+            {formattedActivities.map((activity, index) => (
                 <div key={activity.id} className="relative pl-6 pb-6 last:pb-0 group">
                     {/* Timeline Line */}
-                    {index !== activities.length - 1 && (
+                    {index !== formattedActivities.length - 1 && (
                         <div className="absolute left-[11px] top-6 bottom-0 w-px bg-border group-hover:bg-primary/50 transition-colors" />
                     )}
 

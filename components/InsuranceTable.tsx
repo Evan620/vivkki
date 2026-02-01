@@ -2,21 +2,23 @@
 
 import { useState } from "react";
 import { Search, Plus, MoreHorizontal, Phone, MapPin } from "lucide-react";
-import { mockInsurance, InsuranceCompany } from "@/data/mockInsurance";
+interface InsuranceTableProps {
+    initialInsurance: any[];
+}
 
-export function InsuranceTable() {
+export function InsuranceTable({ initialInsurance }: InsuranceTableProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [stateFilter, setStateFilter] = useState("All States");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
     // Extract unique states for filter
-    const uniqueStates = ["All States", ...Array.from(new Set(mockInsurance.map(i => i.state))).filter(Boolean).sort()];
+    const uniqueStates = ["All States", ...Array.from(new Set(initialInsurance.map(i => i.state))).filter(Boolean).sort()];
 
-    const filteredInsurance = mockInsurance.filter(i => {
+    const filteredInsurance = initialInsurance.filter(i => {
         const matchesSearch =
-            i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            i.phone.includes(searchTerm);
+            (i.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (i.phone || "").includes(searchTerm);
 
         const matchesState = stateFilter === "All States" || i.state === stateFilter;
 

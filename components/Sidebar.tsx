@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen, Users, Car, Shield, Settings, Menu } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Users, Car, Shield, Settings, Menu, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Sidebar() {
     const pathname = usePathname();
+    const { user, signOut } = useAuth();
 
     const menuItems = [
         { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -59,12 +61,19 @@ export function Sidebar() {
             <div className="p-4 border-t border-border">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
-                        AD
+                        {user?.email?.substring(0, 2).toUpperCase() || "AD"}
                     </div>
                     <div className="flex-1 overflow-hidden">
-                        <p className="text-sm font-medium truncate">admin@injuryok.com</p>
+                        <p className="text-sm font-medium truncate">{user?.email || "admin@injuryok.com"}</p>
                         <p className="text-xs text-muted-foreground truncate">Admin</p>
                     </div>
+                    <button
+                        onClick={signOut}
+                        className="p-2 hover:bg-muted rounded-md transition-colors text-muted-foreground hover:text-foreground"
+                        title="Sign Out"
+                    >
+                        <LogOut className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
         </aside>

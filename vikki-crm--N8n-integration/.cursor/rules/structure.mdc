@@ -1,0 +1,440 @@
+---
+alwaysApply: true
+---
+Response Format:
+typescriptinterface DocumentGenerationResponse {
+  success: boolean;
+  pdf_base64?: string;
+  filename?: string;
+  error?: string;
+  message?: string;
+}
+```
+
+**Error Handling:**
+- Network timeout: 30 seconds
+- Retry logic: 2 attempts with 2-second delay
+- Fallback: Show user-friendly error with option to retry
+- Log all errors to work log for debugging
+
+---
+
+## 5. UI/UX REQUIREMENTS
+
+### 5.1 Design Principles
+
+1. **Progressive Disclosure:** Don't overwhelm user with options
+2. **Clear Feedback:** Always show what's happening (loading, success, error)
+3. **Forgiving:** Allow easy correction of mistakes
+4. **Consistent:** Match existing Vikki CRM design patterns
+5. **Mobile-First:** Touch-friendly on all screen sizes
+
+---
+
+### 5.2 Component Specifications
+
+#### 5.2.1 Generate Documents Button (Overview Tab)
+
+**Location:** Overview tab, Quick Actions section  
+
+**Visual Design:**
+```
+┌────────────────────────────────────────────┐
+│  Quick Actions                             │
+├────────────────────────────────────────────┤
+│  ┌──────────────────┐  ┌─────────────────┐│
+│  │ 💾 Add Note      │  │ 📄 Generate     ││
+│  │                  │  │    Documents    ││
+│  └──────────────────┘  └─────────────────┘│
+└────────────────────────────────────────────┘
+```
+
+**States:**
+- **Default:** Blue-purple gradient, white text, shadow
+- **Hover:** Lift effect, increased shadow, slight scale
+- **Active/Pressed:** Slightly depressed
+- **Disabled:** Gray, 50% opacity (not used - always enabled)
+
+**Behavior:**
+- Click → Opens document selection modal
+- Mobile: Min 44px tap target
+- Keyboard: Tab focus with Enter to activate
+
+---
+
+#### 5.2.2 Document Selection Modal
+
+**Visual Design:**
+```
+┌──────────────────────────────────────────────────────┐
+│  Generate Document                              ✕    │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  Select the document type you want to generate:     │
+│                                                      │
+│  ┌────────────────────────────────────────────┐    │
+│  │ 📝  Letter of Representation               │    │
+│  │     To Client's Insurance (1st Party)      │    │
+│  └────────────────────────────────────────────┘    │
+│                                                      │
+│  ┌────────────────────────────────────────────┐    │
+│  │ 📄  Letter of Representation               │    │
+│  │     To Defendant's Insurance (3rd Party)   │    │
+│  └────────────────────────────────────────────┘    │
+│                                                      │
+│  ┌────────────────────────────────────────────┐    │
+│  │ 🏥  HIPAA Medical Records Request          │    │
+│  │     Authorization for Release of Records   │    │
+│  └────────────────────────────────────────────┘    │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+**Specifications:**
+- **Size:** 560px max width, auto height
+- **Position:** Center screen with backdrop blur
+- **Animation:** Slide up from bottom (mobile) or fade in (desktop)
+- **Backdrop:** Black 60% opacity with blur
+- **Padding:** 24px all sides
+- **Border Radius:** 16px
+
+**Card Buttons:**
+- **Size:** Full width, 80px height
+- **Border:** 2px solid, colored by type (blue/purple/green)
+- **Hover:** Border color intensifies, background tint
+- **Active:** Background fill with white text
+- **Icon:** 48px emoji/icon, left aligned
+- **Text:** Title bold 16px, subtitle regular 14px gray
+
+**Behavior:**
+- Click outside → Close modal (with animation)
+- ESC key → Close modal
+- Click X button → Close modal
+- Click document type → Immediately start generation
+- Mobile: Full screen on phones, card on tablets
+
+---
+
+#### 5.2.3 Loading State (During Generation)
+
+**Visual Design:**
+```
+┌──────────────────────────────────────────────────────┐
+│  Generating Document...                              │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│        ┌────────────────────────────────┐          │
+│        │  [Spinner Animation]           │          │
+│        │                                 │          │
+│        │  Generating Letter of          │          │
+│        │  Representation - 3rd Party    │          │
+│        │                                 │          │
+│        │  Please wait...                │          │
+│        └────────────────────────────────┘          │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+**Specifications:**
+- **Overlay:** Semi-transparent over modal
+- **Spinner:** Animated circle, blue gradient, 40px
+- **Text:** Document type being generated, subtitle "Please wait..."
+- **Colors:** Blue gradient background, white text
+- **Animation:** Smooth fade in, pulsing effect
+- **No dismiss:** User cannot close during generation
+
+**States:**
+- **Single Document:** "Generating [Document Type]..."
+- **Multiple Documents:** "Generating 3 documents... (2 of 3)"
+- **Progress Bar:** Show for bulk operations (HIPAA)
+
+---
+
+#### 5.2.4 Success State
+
+**Visual Design:**
+```
+┌──────────────────────────────────────────────────────┐
+│  ✓ Document Generated Successfully!                 │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  3rd_party_lor_Case_11_2025-01-31.pdf              │
+│                                                      │
+│  ┌──────────────────┐  ┌──────────────────┐       │
+│  │ 📥 Download      │  │ 📁 View in       │       │
+│  │                  │  │    Documents     │       │
+│  └──────────────────┘  └──────────────────┘       │
+│                                                      │
+│  The document has been saved to your Documents     │
+│  tab and is ready to send.                         │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+**Specifications:**
+- **Show Duration:** 3 seconds, then auto-close OR user dismisses
+- **Toast Alternative:** For quick feedback, use toast notification
+- **Actions:**
+  - Download button → Triggers browser download
+  - View in Documents → Navigates to Documents tab
+  - Background click → Dismisses modal
+- **Auto Actions:**
+  - PDF auto-downloads immediately
+  - Document saved to database
+  - Work log entry created
+  - Modal closes after 3 seconds
+
+---
+
+#### 5.2.5 Error State
+
+**Visual Design:**
+```
+┌──────────────────────────────────────────────────────┐
+│  ⚠ Cannot Generate Document                         │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  Missing required information:                       │
+│                                                      │
+│  • Defendant's Insurance Company                    │
+│  • Claim Number                                      │
+│                                                      │
+│  Please complete this information before            │
+│  generating the document.                            │
+│                                                      │
+│  ┌──────────────────┐  ┌──────────────────┐       │
+│  │ Go to Insurance  │  │ Cancel           │       │
+│  │ Tab              │  │                  │       │
+│  └──────────────────┘  └──────────────────┘       │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+**Specifications:**
+- **Colors:** Orange/red warning theme
+- **Icon:** Warning triangle
+- **Message:** Clear explanation of what's wrong
+- **Missing Fields:** Bulleted list of specific fields
+- **Actions:**
+  - "Go to [Tab]" button → Switches to relevant tab and highlights field
+  - "Cancel" → Closes modal
+- **Helpful:** Guides user to fix the problem
+
+---
+
+### 5.3 Medical Providers Tab Enhancement
+
+#### 5.3.1 Bulk Selection Interface
+
+**Visual Design:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Medical Providers                                           │
+│                                                             │
+│ ┌─────────────────────────────────────────┐  ┌──────────┐ │
+│ │ 📋 Generate Records Request (3)         │  │ Add      │ │
+│ └─────────────────────────────────────────┘  │ Provider │ │
+│                                                └──────────┘ │
+│                                                             │
+│ ┌───┬─────────────────────────┬──────────┬─────────┬─────┐│
+│ │☑ │ Provider Name            │ Service  │ Billed  │ ... ││
+│ ├───┼─────────────────────────┼──────────┼─────────┼─────┤│
+│ │☑ │ OU Medical Center       │ ER       │ $6,845  │ ... ││
+│ │☐ │ Integris Health         │ Primary  │ $425    │ ... ││
+│ │☑ │ Excel Physical Therapy  │ PT       │ $5,280  │ ... ││
+│ │☑ │ Oklahoma Pain Physicians│ Pain Mgt │ $3,200  │ ... ││
+│ └───┴─────────────────────────┴──────────┴─────────┴─────┘│
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Specifications:**
+
+**Checkbox Column:**
+- **Width:** 40px fixed
+- **Checkbox Size:** 20px × 20px
+- **Header Checkbox:** "Select All" functionality
+- **Mobile:** Larger 24px × 24px checkboxes for touch
+- **States:** 
+  - Unchecked: Gray border
+  - Checked: Blue fill with white checkmark
+  - Indeterminate (some selected): Blue with dash
+
+**Generate Button:**
+- **Text:** "📋 Generate Records Request" (no count when 0 selected)
+- **Text with Count:** "📋 Generate Records Request (3)" when providers selected
+- **States:**
+  - Disabled: Gray, 50% opacity when 0 selected
+  - Enabled: Blue gradient when ≥1 selected
+  - Hover: Lift effect
+- **Position:** Top left, above table
+- **Size:** Auto width with padding, 44px min height
+
+**Selection Behavior:**
+- Click checkbox → Toggle selection
+- Click row → Does NOT toggle (prevents accidental selection)
+- Header checkbox → Select/deselect all visible providers
+- Selected rows → Subtle blue background tint
+- Count updates in real-time in button
+
+---
+
+#### 5.3.2 Bulk Generation Confirmation Modal
+
+**Visual Design:**
+```
+┌──────────────────────────────────────────────────────┐
+│  Generate HIPAA Requests                        ✕   │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  You are about to generate medical records          │
+│  requests for 3 providers:                          │
+│                                                      │
+│  ✓ OU Medical Center                                │
+│    700 NE 13th Street, Oklahoma City, OK            │
+│                                                      │
+│  ✓ Excel Physical Therapy                           │
+│    5800 N. Classen Boulevard, Oklahoma City, OK     │
+│                                                      │
+│  ✓ Oklahoma Pain Physicians                         │
+│    9920 S. Pennsylvania Avenue, Oklahoma City, OK   │
+│                                                      │
+│  Each provider will receive a separate HIPAA        │
+│  authorization form.                                 │
+│                                                      │
+│  ┌──────────────────┐  ┌──────────────────┐       │
+│  │ Cancel           │  │ Generate         │       │
+│  │                  │  │ Documents        │       │
+│  └──────────────────┘  └──────────────────┘       │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+**Specifications:**
+- **Provider List:** Show name and address for confirmation
+- **Checkmarks:** Visual confirmation of selection
+- **Explanation:** Brief text explaining what will happen
+- **Actions:**
+  - Cancel → Close modal, keep selections
+  - Generate Documents → Start bulk generation
+- **Scrollable:** If > 5 providers, make list scrollable
+
+---
+
+### 5.4 Mobile Responsiveness
+
+#### 5.4.1 Breakpoints
+
+| Device | Width | Layout Changes |
+|--------|-------|----------------|
+| **Phone** | 320-767px | - Full screen modals<br>- Single column layouts<br>- Larger touch targets (44px min)<br>- Simplified table (scroll or cards) |
+| **Tablet** | 768-1023px | - Centered modals (80% width)<br>- 2-column layouts where appropriate<br>- Standard touch targets |
+| **Desktop** | 1024px+ | - Centered modals (560px max)<br>- Multi-column layouts<br>- Hover effects enabled |
+
+#### 5.4.2 Touch Interactions
+
+**All Interactive Elements:**
+- Minimum size: 44px × 44px (Apple/Android guidelines)
+- Spacing: 8px minimum between touch targets
+- Feedback: Immediate visual response on tap
+- No hover-only features (must work without hover)
+
+**Checkboxes:**
+- Mobile: 24px × 24px (larger than desktop 20px)
+- Touch area: 44px × 44px (invisible padding)
+- Visual feedback: Scale slightly on tap
+
+**Buttons:**
+- Mobile: Full width or min 44px height
+- Desktop: Auto width with min 120px
+- Padding: 12px vertical, 24px horizontal minimum
+
+---
+
+## 6. TECHNICAL REQUIREMENTS
+
+### 6.1 Code Architecture
+
+#### 6.1.1 File Structure
+```
+src/
+├── components/
+│   ├── documents/
+│   │   ├── DocumentGenerationModal.tsx      # Main modal component
+│   │   ├── DocumentTypeButton.tsx           # Reusable document type button
+│   │   ├── GeneratingState.tsx              # Loading state component
+│   │   ├── SuccessState.tsx                 # Success feedback component
+│   │   ├── ErrorState.tsx                   # Error handling component
+│   │   ├── BulkSelectionConfirmation.tsx    # HIPAA bulk confirmation
+│   │   └── index.ts                         # Barrel export
+│   │
+│   └── medical/
+│       ├── MedicalProvidersTable.tsx        # Enhanced with checkboxes
+│       └── ProviderCheckbox.tsx             # Reusable checkbox component
+│
+├── hooks/
+│   ├── useDocumentGeneration.ts             # Document generation logic
+│   ├── useBulkSelection.ts                  # Bulk selection state management
+│   └── useDocumentValidation.ts             # Pre-generation validation
+│
+├── services/
+│   ├── documentService.ts                   # n8n API calls
+│   ├── dataPreparation.ts                   # Format data for templates
+│   └── documentStorage.ts                   # Save to Supabase storage
+│
+├── types/
+│   ├── documents.ts                         # Document-related TypeScript interfaces
+│   └── templates.ts                         # Template data interfaces
+│
+└── utils/
+    ├── pdfDownload.ts                       # PDF download helper
+    ├── dateFormatting.ts                    # Date formatting utilities
+    └── validation.ts                        # Field validation rules
+```
+
+---
+
+#### 6.1.2 Component Hierarchy
+```
+OverviewTab
+├── QuickActions
+│   └── GenerateDocumentsButton
+│       └── onClick → Opens DocumentGenerationModal
+│
+└── DocumentGenerationModal
+    ├── DocumentTypeButton (1st Party LOR)
+    ├── DocumentTypeButton (3rd Party LOR)
+    ├── DocumentTypeButton (HIPAA)
+    │
+    └── onClick any button → 
+        ├── useDocumentValidation hook
+        │   ├── If invalid → Show ErrorState
+        │   └── If valid → Show GeneratingState
+        │
+        ├── useDocumentGeneration hook
+        │   ├── Prepare data (dataPreparation service)
+        │   ├── Call n8n (documentService)
+        │   ├── Download PDF (pdfDownload util)
+        │   ├── Save to storage (documentStorage service)
+        │   └── Create work log
+        │
+        └── SuccessState → Auto-close modal
+
+MedicalProvidersTab
+├── BulkSelectionToolbar
+│   ├── GenerateRecordsRequestButton
+│   └── SelectedCount Badge
+│
+├── MedicalProvidersTable
+│   ├── HeaderCheckbox (Select All)
+│   └── ProviderRow[]
+│       └── ProviderCheckbox
+│
+└── useBulkSelection hook
+    ├── Manages selected provider IDs
+    ├── Select all / Deselect all logic
+    └── Provides selectedProviders array
+│
+└── BulkSelectionConfirmation Modal
+    ├── Shows list of selected providers
+    ├── Confirm → Generate for each provider
+    └── GeneratingState with progress (1 of 3)

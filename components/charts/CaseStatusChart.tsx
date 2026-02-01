@@ -2,20 +2,28 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
-const data = [
-    { name: "Active", value: 24, color: "#2563eb" }, // bright blue
-    { name: "Awaiting B&R", value: 17, color: "#3b82f6" }, // blue-500
-    { name: "Counter Sent", value: 9, color: "#60a5fa" }, // blue-400
-    { name: "Demand Sent", value: 6, color: "#93c5fd" }, // blue-300
-    { name: "Negotiating", value: 4, color: "#c4b5fd" }, // violet-300
-    { name: "New", value: 3, color: "#a78bfa" }, // violet-400
-    { name: "Others", value: 6, color: "#e4e4e7" }, // gray-200
-];
+interface CaseStatusData {
+    name: string;
+    value: number;
+    color: string;
+}
 
-export function CaseStatusChart() {
+interface CaseStatusChartProps {
+    data: CaseStatusData[];
+}
+
+export function CaseStatusChart({ data }: CaseStatusChartProps) {
+    if (!data || data.length === 0) {
+        return (
+            <div className="h-[300px] w-full flex items-center justify-center text-muted-foreground">
+                No case status data available
+            </div>
+        );
+    }
+
     return (
         <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
                     <Pie
                         data={data}

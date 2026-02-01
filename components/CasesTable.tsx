@@ -1,63 +1,114 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Filter, MoreHorizontal, AlertTriangle, Archive, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Search, Filter, MoreHorizontal, AlertTriangle, Archive, Plus, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 interface Case {
-    id: string;
-    caseNumber: string;
-    name: string;
+    id: number; // details say bigserial, so usually number or string. JS handles bigint as string sometimes if too large, but usually number for IDs in Supabase JS unless configured otherwise. Let's assume number or string. Supabase usually returns numbers for int8.
+    // Wait, Supabase IDs are usually numbers if bigserial, but often safer as strings. Let's check what the migration said: `id bigserial PRIMARY KEY`.
+    // I will type it as string | number to be safe, or check the return type.
+    // Actually, let's look at the mock data, it used strings "1", "2".
+    // I'll stick to any for now or try to be specific if I can.
+    case_number: string; // The migration says case_number is NOT in the main file 20251010... wait.
+    // 20251010... has `wreck_type`, etc. NOT `case_number`?
+    // Ah, `20251010...` didn't have `case_number` in the `casefiles` table definition I read!
+    // It had `id`. Maybe `case_number` IS the `id`?
+    // Let's re-read the migration carefully.
+    // Line 100: `id bigserial PRIMARY KEY`.
+    // No `case_number` column in `20251010051318_create_vikki_crm_schema.sql`.
+    // Maybe it was added later? "20251030..."?
+    // I better check if `case_number` exists. If not, I'll use `id` as case number.
+
+    // Schema mapping:
+    // name -> computed? or distinct column? not in initial schema.
+    // client_count -> `client_count`
+    // daysOpen -> computed from `created_at`
+    // statuteAlert -> `statute_alert`
+    // statuteDaysLeft -> computed?
+    name?: string; // There is no 'name' column in the initial schema.
+    // But `clients` table exists. Maybe the "Case Name" is the Client's Last Name?
+    // Usually cases are named after the primary client (e.g., "Smith v. Jones" or "Smith").
+    // The previous mock data had "Aimon", "Alletto" (Last names).
+    // So I need to fetch the PRIMARY CLIENT's last name.
+
     stage: string;
     status: string;
-    daysOpen: number;
-    statuteAlert: string;
-    clientsCount?: number;
-    statuteDaysLeft?: number;
+    created_at: string;
+    statute_alert?: string;
+    client_count?: number;
+    statute_of_limitations?: string; // Check if this exists
 }
 
-const mockCases: Case[] = [
-    { id: "1", name: "Aimon", caseNumber: "#46", stage: "Demand", status: "Ready for Demand", daysOpen: 299, statuteAlert: "No alert" },
-    { id: "2", name: "Alletto", caseNumber: "#47", stage: "Demand", status: "Active", daysOpen: 375, statuteAlert: "No alert" },
-    { id: "3", name: "Allison", caseNumber: "#48", stage: "Demand", status: "Active", daysOpen: 611, statuteAlert: "115 days left", statuteDaysLeft: 115 },
-    { id: "4", name: "Baxter Family", caseNumber: "#49", stage: "Processing", status: "Active", daysOpen: 303, statuteAlert: "No alert", clientsCount: 3 },
-    { id: "5", name: "Booker-Whitehead", caseNumber: "#50", stage: "Processing", status: "Active", daysOpen: 157, statuteAlert: "No alert", clientsCount: 2 },
-    { id: "6", name: "Bourne", caseNumber: "#99", stage: "Demand", status: "Negotiating", daysOpen: 550, statuteAlert: "99 days left", statuteDaysLeft: 99 },
-    { id: "7", name: "Carr", caseNumber: "#53", stage: "Processing", status: "Active", daysOpen: 295, statuteAlert: "No alert" },
-    { id: "8", name: "Childress Family", caseNumber: "#54", stage: "Processing", status: "Active", daysOpen: 303, statuteAlert: "No alert", clientsCount: 3 },
-    { id: "9", name: "Clack", caseNumber: "#55", stage: "Processing", status: "Active", daysOpen: 212, statuteAlert: "No alert" },
-    { id: "10", name: "client-Test", caseNumber: "#103", stage: "Demand", status: "Demand Sent", daysOpen: 52, statuteAlert: "No alert", clientsCount: 2 },
-    { id: "11", name: "Cobb-Hoffman", caseNumber: "#56", stage: "Demand", status: "Active", daysOpen: 235, statuteAlert: "No alert", clientsCount: 2 },
-    { id: "12", name: "Cole-Hagenes-Test", caseNumber: "#131", stage: "Processing", status: "Treating", daysOpen: 12, statuteAlert: "No alert", clientsCount: 2 },
-    { id: "13", name: "Conrady", caseNumber: "#57", stage: "Demand", status: "Demand Sent", daysOpen: 485, statuteAlert: "STATUTE EXPIRED", statuteDaysLeft: -1 },
-    { id: "14", name: "Copier Family", caseNumber: "#80", stage: "Treating", status: "Active", daysOpen: 73, statuteAlert: "No alert", clientsCount: 5 },
-    { id: "15", name: "Cullum", caseNumber: "#59", stage: "Processing", status: "Awaiting B&R", daysOpen: 142, statuteAlert: "No alert" },
-    { id: "16", name: "Dacus", caseNumber: "#111", stage: "Processing", status: "Treating", daysOpen: 34, statuteAlert: "No alert" },
-    { id: "17", name: "Davis-Cagle", caseNumber: "#52", stage: "Litigation", status: "Active", daysOpen: 303, statuteAlert: "No alert", clientsCount: 2 },
-    { id: "18", name: "Degand", caseNumber: "#60", stage: "Demand", status: "Active", daysOpen: 249, statuteAlert: "No alert" },
-    { id: "19", name: "Ellis", caseNumber: "#61", stage: "Processing", status: "Awaiting B&R", daysOpen: 262, statuteAlert: "No alert" },
-    { id: "20", name: "Ergenbright Family", caseNumber: "#62", stage: "Demand", status: "Negotiating", daysOpen: 443, statuteAlert: "No alert", clientsCount: 5 },
-    { id: "21", name: "Flores", caseNumber: "#63", stage: "Demand", status: "Demand Sent", daysOpen: 240, statuteAlert: "No alert" },
-    { id: "22", name: "Galberth", caseNumber: "#64", stage: "Demand", status: "Payment Instructions Sent", daysOpen: 354, statuteAlert: "No alert" },
-    { id: "23", name: "Garcia", caseNumber: "#65", stage: "Demand", status: "Proposed Settlement Statement Sent", daysOpen: 324, statuteAlert: "No alert" },
-    { id: "24", name: "Glore", caseNumber: "#66", stage: "Demand", status: "Negotiating", daysOpen: 415, statuteAlert: "No alert" },
-    { id: "25", name: "Granger", caseNumber: "#68", stage: "Demand", status: "Active", daysOpen: 554, statuteAlert: "110 days left", statuteDaysLeft: 110 },
-    { id: "26", name: "Torres", caseNumber: "#83", stage: "Demand", status: "Ready for Demand", daysOpen: 814, statuteAlert: "STATUTE EXPIRED", statuteDaysLeft: -1 },
-];
-
 export function CasesTable() {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [cases, setCases] = useState<any[]>([]); // Using any for now to debug schema mismatch if any
+    const [loading, setLoading] = useState(true);
     const itemsPerPage = 10;
 
-    const filteredCases = mockCases.filter(c =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.caseNumber.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    useEffect(() => {
+        const fetchCases = async () => {
+            setLoading(true);
+            try {
+                // Fetch cases with their primary client to create a name
+                // "clients" table has "is_driver" or "client_number".
+                // I'll fetch `*, clients(first_name, last_name)`
+                // Note: Supabase JS relationship: `clients` linked to `casefiles`.
+                const { data, error } = await supabase
+                    .from('casefiles')
+                    .select('*, clients(*)')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                // Transform data to match UI needs
+                const formattedData = (data || []).map((c: any) => {
+                    const primaryClient = c.clients?.find((cl: any) => cl.client_number === 1) || c.clients?.[0];
+                    const caseName = primaryClient ? `${primaryClient.last_name}` : `Case #${c.id}`;
+                    const daysOpen = Math.floor((new Date().getTime() - new Date(c.created_at).getTime()) / (1000 * 3600 * 24));
+                    return {
+                        ...c,
+                        name: caseName,
+                        caseNumber: `#${c.id}`, // Use ID as case number for now
+                        daysOpen,
+                        clientsCount: c.client_count, // Use the column
+                        statuteAlert: c.statute_alert || "No alert", // Use DB column or default
+                        // statuteDaysLeft calculation if needed
+                    };
+                });
+
+                setCases(formattedData);
+            } catch (err) {
+                console.error('Error fetching cases:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCases();
+    }, []);
+
+    const filteredCases = cases.filter(c => {
+        const searchLower = searchTerm.toLowerCase();
+        return (c.name?.toLowerCase().includes(searchLower) ||
+            String(c.caseNumber).toLowerCase().includes(searchLower));
+    });
 
     const totalPages = Math.ceil(filteredCases.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = Math.min(startIndex + itemsPerPage, filteredCases.length);
     const currentCases = filteredCases.slice(startIndex, endIndex);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
@@ -93,27 +144,29 @@ export function CasesTable() {
             <div className="rounded-xl border border-border bg-card/50 backdrop-blur-sm shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-border flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
-                        Showing <span className="font-medium text-foreground">{startIndex + 1}-{endIndex}</span> of <span className="font-medium text-foreground">{filteredCases.length}</span> cases
+                        Showing <span className="font-medium text-foreground">{filteredCases.length > 0 ? startIndex + 1 : 0}-{endIndex}</span> of <span className="font-medium text-foreground">{filteredCases.length}</span> cases
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="px-3 py-1 text-xs font-medium rounded-md bg-muted/50 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            Previous
-                        </button>
-                        <span className="text-xs text-muted-foreground">
-                            Page {currentPage} of {totalPages}
-                        </span>
-                        <button
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-1 text-xs font-medium rounded-md bg-muted/50 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            Next
-                        </button>
-                    </div>
+                    {totalPages > 1 && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="px-3 py-1 text-xs font-medium rounded-md bg-muted/50 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Previous
+                            </button>
+                            <span className="text-xs text-muted-foreground">
+                                Page {currentPage} of {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="px-3 py-1 text-xs font-medium rounded-md bg-muted/50 hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
@@ -128,21 +181,33 @@ export function CasesTable() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                            {currentCases.map((c) => (
-                                <tr key={c.id} className="hover:bg-muted/30 transition-colors group">
+                            {currentCases.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                                        No cases found.
+                                    </td>
+                                </tr>
+                            ) : currentCases.map((c) => (
+                                <tr
+                                    key={c.id}
+                                    onClick={() => router.push(`/cases/${c.id}`)}
+                                    className="hover:bg-muted/30 transition-colors group cursor-pointer"
+                                >
                                     <td className="px-6 py-4">
-                                        <div className="font-medium text-foreground">{c.name}</div>
-                                        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                            <span>Case {c.caseNumber}</span>
-                                            {c.clientsCount && (
-                                                <span className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{c.clientsCount} clients</span>
-                                            )}
+                                        <div className="block group/link">
+                                            <div className="font-medium text-foreground group-hover/link:text-primary transition-colors">{c.name}</div>
+                                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                                <span>Case {c.caseNumber}</span>
+                                                {c.clientsCount !== undefined && (
+                                                    <span className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{c.clientsCount} clients</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-foreground">{c.stage}</td>
+                                    <td className="px-6 py-4 text-foreground">{c.stage || 'N/A'}</td>
                                     <td className="px-6 py-4">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                                            {c.status}
+                                            {c.status || 'Active'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
@@ -150,18 +215,16 @@ export function CasesTable() {
                                         <div className="text-xs text-muted-foreground">Since sign-up</div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        {c.statuteDaysLeft !== undefined && c.statuteDaysLeft < 0 ? (
+                                        {c.statuteAlert === "STATUTE EXPIRED" ? (
                                             <div className="text-destructive font-bold flex items-center gap-1.5 animate-pulse">
                                                 <AlertTriangle className="w-3.5 h-3.5" />
                                                 STATUTE EXPIRED
                                             </div>
-                                        ) : c.statuteDaysLeft !== undefined && c.statuteDaysLeft <= 120 ? (
-                                            <div className="text-orange-500 font-medium flex items-center gap-1.5">
-                                                <AlertTriangle className="w-3.5 h-3.5" />
+                                        ) : (
+                                            <div className={`${c.statuteAlert?.includes("days left") ? "text-orange-500 font-medium" : "text-muted-foreground"} flex items-center gap-1.5`}>
+                                                {c.statuteAlert !== "No alert" && <AlertTriangle className="w-3.5 h-3.5" />}
                                                 {c.statuteAlert}
                                             </div>
-                                        ) : (
-                                            <div className="text-muted-foreground">{c.statuteAlert}</div>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 text-right">

@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 import { Search, Filter, MoreHorizontal, MapPin, Phone, Plus } from "lucide-react";
-import { mockProviders, Provider } from "@/data/mockProviders";
+import { MedicalProvider } from "@/types";
 
-export function ProvidersTable() {
+interface ProvidersTableProps {
+    initialProviders: MedicalProvider[];
+}
+
+export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("All Types");
     const [stateFilter, setStateFilter] = useState("All States");
@@ -13,14 +17,14 @@ export function ProvidersTable() {
     const itemsPerPage = 10;
 
     // Extract unique types and states for filters
-    const uniqueTypes = ["All Types", ...Array.from(new Set(mockProviders.map(p => p.type))).sort()];
-    const uniqueStates = ["All States", ...Array.from(new Set(mockProviders.map(p => p.state))).filter(Boolean).sort()];
+    const uniqueTypes = ["All Types", ...Array.from(new Set(initialProviders.map(p => p.type || "Other"))).filter(Boolean).sort()];
+    const uniqueStates = ["All States", ...Array.from(new Set(initialProviders.map(p => p.state))).filter(Boolean).sort()];
 
-    const filteredProviders = mockProviders.filter(p => {
+    const filteredProviders = initialProviders.filter(p => {
         const matchesSearch =
-            p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.phone.includes(searchTerm);
+            (p.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (p.city || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (p.phone || "").includes(searchTerm);
 
         const matchesType = typeFilter === "All Types" || p.type === typeFilter;
         const matchesState = stateFilter === "All States" || p.state === stateFilter;
@@ -147,7 +151,7 @@ export function ProvidersTable() {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 text-muted-foreground">
                                             <MapPin className="w-3.5 h-3.5" />
-                                            {p.location}
+                                            {[p.city, p.state].filter(Boolean).join(", ")}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">

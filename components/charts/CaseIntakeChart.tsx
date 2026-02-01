@@ -2,19 +2,27 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const data = [
-    { name: "Aug 2025", cases: 25 },
-    { name: "Sep 2025", cases: 35 },
-    { name: "Oct 2025", cases: 15 },
-    { name: "Nov 2025", cases: 30 },
-    { name: "Dec 2025", cases: 32 },
-    { name: "Jan 2026", cases: 28 },
-];
+interface CaseIntakeData {
+    name: string;
+    cases: number;
+}
 
-export function CaseIntakeChart() {
+interface CaseIntakeChartProps {
+    data: CaseIntakeData[];
+}
+
+export function CaseIntakeChart({ data }: CaseIntakeChartProps) {
+    if (!data || data.length === 0) {
+        return (
+            <div className="h-[300px] w-full flex items-center justify-center text-muted-foreground">
+                No intake data available
+            </div>
+        );
+    }
+
     return (
         <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart
                     data={data}
                     margin={{

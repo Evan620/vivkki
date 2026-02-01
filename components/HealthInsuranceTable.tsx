@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { Search, Plus, MoreHorizontal, Phone, Shield } from "lucide-react";
-import { mockHealthInsurance, HealthInsuranceCompany } from "@/data/mockHealthInsurance";
+interface HealthInsuranceTableProps {
+    initialInsurance: any[];
+}
 
-export function HealthInsuranceTable() {
+export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
-    const filteredInsurance = mockHealthInsurance.filter(i =>
-        i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.phone.includes(searchTerm)
+    const filteredInsurance = initialInsurance.filter(i =>
+        (i.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (i.phone || "").includes(searchTerm)
     );
 
     const totalPages = Math.ceil(filteredInsurance.length / itemsPerPage);

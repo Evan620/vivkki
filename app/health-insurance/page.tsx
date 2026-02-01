@@ -1,8 +1,29 @@
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { HealthInsuranceTable } from "@/components/HealthInsuranceTable";
+import { createClient } from "@/lib/supabase/server";
 
-export default function HealthInsurancePage() {
+// Revalidate every minute
+export const revalidate = 60;
+
+async function fetchHealthInsurance() {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('health_insurance')
+        .select('*')
+        .order('name', { ascending: true });
+
+    if (error) {
+        console.error("Error fetching health insurance:", error);
+        return [];
+    }
+
+    return data || [];
+}
+
+export default async function HealthInsurancePage() {
+    const insuranceData = await fetchHealthInsurance();
+
     return (
         <div className="flex min-h-screen">
             <Sidebar />
@@ -13,7 +34,7 @@ export default function HealthInsurancePage() {
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">Health Insurance</h1>
                         <p className="text-muted-foreground mt-2">Manage health insurance companies</p>
                     </div>
-                    <HealthInsuranceTable />
+                    <HealthInsuranceTable initialInsurance={insuranceData} />
                 </div>
             </main>
         </div>
