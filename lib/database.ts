@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
+import type { MedicalProvider } from '@/types/intake';
 
 export async function fetchHealthInsurers() {
     const { data, error } = await supabase
@@ -76,7 +77,7 @@ export async function fetchAutoAdjusters(someBool = false) {
     }
 }
 
-export async function fetchMedicalProviders() {
+export async function fetchMedicalProviders(): Promise<MedicalProvider[]> {
     const { data, error } = await supabase
         .from('medical_providers')
         .select('*')
