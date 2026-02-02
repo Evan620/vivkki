@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/Sidebar";
+
 import { Header } from "@/components/Header";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -54,14 +54,11 @@ export default async function HealthInsuranceDetailsPage({ params }: PageProps) 
     const adjusters = await getAdjusters(id);
 
     return (
-        <div className="flex min-h-screen bg-background">
-            <Sidebar />
-            <main className="flex-1 md:ml-64 transition-[margin]">
-                <Header pageName="Provider Details" />
-                <div className="p-6 max-w-[1600px] mx-auto">
-                    <HealthInsuranceDetails initialData={insurance} initialAdjusters={adjusters} />
-                </div>
-            </main>
-        </div>
+        <>
+            <Header pageName="Provider Details" />
+            <div className="p-6 max-w-[1600px] mx-auto">
+                <HealthInsuranceDetails initialData={insurance} initialAdjusters={adjusters} />
+            </div>
+        </>
     );
 }

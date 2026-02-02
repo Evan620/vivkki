@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/Sidebar";
+
 import { Header } from "@/components/Header";
 import { InsuranceTable } from "@/components/InsuranceTable";
 import { createClient } from "@/lib/supabase/server";
@@ -25,18 +25,15 @@ export default async function AutoInsurancePage() {
     const insuranceData = await fetchAutoInsurance();
 
     return (
-        <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 md:ml-64 transition-[margin]">
-                <Header pageName="Auto Insurance" />
-                <div className="p-6 max-w-[1600px] mx-auto">
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Auto Insurance</h1>
-                        <p className="text-muted-foreground mt-2">Manage auto insurance companies</p>
-                    </div>
-                    <InsuranceTable initialInsurance={insuranceData} />
+        <>
+            <Header pageName="Auto Insurance" />
+            <div className="p-6 max-w-[1600px] mx-auto">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Auto Insurance</h1>
+                    <p className="text-muted-foreground mt-2">Manage auto insurance companies</p>
                 </div>
-            </main>
-        </div>
+                <InsuranceTable initialInsurance={insuranceData} />
+            </div>
+        </>
     );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Sidebar } from "@/components/Sidebar";
+
 import { Header } from "@/components/Header";
 import { CaseHeader } from "@/components/case-details/CaseHeader";
 import { CaseTabs } from "@/components/case-details/CaseTabs";
@@ -385,16 +385,13 @@ export default function CaseDetailsPage({
     }
 
     return (
-        <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 md:ml-64 transition-[margin] bg-muted/10">
-                <Header pageName="Cases" />
-                <div className="p-6 max-w-[1600px] mx-auto">
-                    <CaseHeader caseDetail={caseDetail} />
-                    <CaseTabs />
-                    {content}
-                </div>
-            </main>
+        <div className="bg-muted/10 min-h-screen">
+            <Header pageName="Cases" />
+            <div className="p-6 max-w-[1600px] mx-auto">
+                <CaseHeader caseDetail={caseDetail} />
+                <CaseTabs />
+                {content}
+            </div>
         </div>
     );
 }

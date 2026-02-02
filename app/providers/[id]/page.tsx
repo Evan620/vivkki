@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/Sidebar";
+
 import { Header } from "@/components/Header";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -37,14 +37,11 @@ export default async function MedicalProviderPage({ params }: PageProps) {
     }
 
     return (
-        <div className="flex min-h-screen bg-background">
-            <Sidebar />
-            <main className="flex-1 md:ml-64 transition-[margin]">
-                <Header pageName="Provider Details" />
-                <div className="p-6">
-                    <MedicalProviderDetails initialProvider={provider} />
-                </div>
-            </main>
-        </div>
+        <>
+            <Header pageName="Provider Details" />
+            <div className="p-6">
+                <MedicalProviderDetails initialProvider={provider} />
+            </div>
+        </>
     );
 }
