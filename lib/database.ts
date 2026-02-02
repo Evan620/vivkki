@@ -99,7 +99,8 @@ export async function fetchMedicalProviders() {
         fax: row.fax || row.fax_1,
         email: row.email || row.email_1,
         request_method: row.request_method,
-        notes: row.notes
+        notes: row.notes,
+        created_at: row.created_at
     }));
 }
 
@@ -162,7 +163,8 @@ export async function createMedicalProvider(provider: any) {
         fax: data.fax,
         email: data.email,
         request_method: data.request_method,
-        notes: data.notes
+        notes: data.notes,
+        created_at: data.created_at
     };
 }
 
