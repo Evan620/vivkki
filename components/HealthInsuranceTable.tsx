@@ -1,12 +1,15 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, Plus, MoreHorizontal, Phone, Shield } from "lucide-react";
+
 interface HealthInsuranceTableProps {
     initialInsurance: any[];
 }
 
 export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableProps) {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -92,7 +95,11 @@ export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableP
                         </thead>
                         <tbody className="divide-y divide-border">
                             {currentInsurance.map((i) => (
-                                <tr key={i.id} className="hover:bg-muted/30 transition-colors group">
+                                <tr
+                                    key={i.id}
+                                    className="hover:bg-muted/30 transition-colors group cursor-pointer"
+                                    onClick={() => router.push(`/health-insurance/${i.id}`)}
+                                >
                                     <td className="px-6 py-4">
                                         <div className="font-medium text-foreground">{i.name}</div>
                                     </td>

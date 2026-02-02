@@ -1,0 +1,67 @@
+import { Sidebar } from "@/components/Sidebar";
+import { Header } from "@/components/Header";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import AutoInsuranceDetails from "@/components/auto-insurance/AutoInsuranceDetails";
+
+interface PageProps {
+    params: Promise<{
+        id: string;
+    }>;
+}
+
+// Revalidate data every minute
+export const revalidate = 60;
+
+async function getAutoInsurance(id: string) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('auto_insurance')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error || !data) {
+        return null;
+    }
+
+    return data;
+}
+
+async function getAdjusters(insuranceId: string) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('auto_adjusters')
+        .select('*')
+        .eq('auto_insurance_id', insuranceId)
+        .order('last_name', { ascending: true });
+
+    if (error) {
+        return [];
+    }
+
+    return data;
+}
+
+export default async function AutoInsuranceDetailsPage({ params }: PageProps) {
+    const { id } = await params;
+    const insurance = await getAutoInsurance(id);
+
+    if (!insurance) {
+        redirect('/auto-insurance');
+    }
+
+    const adjusters = await getAdjusters(id);
+
+    return (
+        <div className="flex min-h-screen bg-background">
+            <Sidebar />
+            <main className="flex-1 md:ml-64 transition-[margin]">
+                <Header pageName="Provider Details" />
+                <div className="p-6 max-w-[1600px] mx-auto">
+                    <AutoInsuranceDetails initialData={insurance} initialAdjusters={adjusters} />
+                </div>
+            </main>
+        </div>
+    );
+}

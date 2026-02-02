@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, Filter, MoreHorizontal, MapPin, Phone, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { MedicalProvider } from "@/types";
 
 interface ProvidersTableProps {
@@ -9,6 +10,7 @@ interface ProvidersTableProps {
 }
 
 export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("All Types");
     const [stateFilter, setStateFilter] = useState("All States");
@@ -134,7 +136,11 @@ export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {currentProviders.map((p) => (
-                                <tr key={p.id} className="hover:bg-muted/30 transition-colors group">
+                                <tr
+                                    key={p.id}
+                                    className="hover:bg-muted/30 transition-colors group cursor-pointer"
+                                    onClick={() => router.push(`/providers/${p.id}`)}
+                                >
                                     <td className="px-6 py-4">
                                         <div className="font-medium text-foreground">{p.name}</div>
                                     </td>

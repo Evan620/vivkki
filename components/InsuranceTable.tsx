@@ -1,12 +1,15 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, Plus, MoreHorizontal, Phone, MapPin } from "lucide-react";
+
 interface InsuranceTableProps {
     initialInsurance: any[];
 }
 
 export function InsuranceTable({ initialInsurance }: InsuranceTableProps) {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [stateFilter, setStateFilter] = useState("All States");
     const [currentPage, setCurrentPage] = useState(1);
@@ -118,7 +121,11 @@ export function InsuranceTable({ initialInsurance }: InsuranceTableProps) {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {currentInsurance.map((i) => (
-                                <tr key={i.id} className="hover:bg-muted/30 transition-colors group">
+                                <tr
+                                    key={i.id}
+                                    className="hover:bg-muted/30 transition-colors group cursor-pointer"
+                                    onClick={() => router.push(`/auto-insurance/${i.id}`)}
+                                >
                                     <td className="px-6 py-4">
                                         <div className="font-medium text-foreground">{i.name}</div>
                                     </td>

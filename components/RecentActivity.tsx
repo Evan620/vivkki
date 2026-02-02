@@ -1,5 +1,6 @@
 import { FileText, Phone, Mail, User, Activity } from "lucide-react";
-import { formatDistanceToNow, parseISO } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
+import { parseISO } from 'date-fns/parseISO';
 
 export interface ActivityItem {
     id: number | string;

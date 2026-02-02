@@ -130,7 +130,10 @@ export function CasesTable() {
                         <Archive className="w-4 h-4 text-muted-foreground" />
                         Archives
                     </button>
-                    <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    <button
+                        onClick={() => router.push('/cases/new')}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                    >
                         <Plus className="w-4 h-4" />
                         New Case
                     </button>
