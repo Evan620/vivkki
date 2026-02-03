@@ -4,6 +4,7 @@ import { useState } from 'react'
 // import { createClientComponentClient } from '@supabase/auth-helpers-nextjs' - Removing as we are different package
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import { getURL } from '@/lib/utils'
 import { Eye, EyeOff, Loader2, Lock, Mail, UserPlus, ArrowRight, User } from 'lucide-react'
 import { useEffect } from 'react'
 
@@ -47,7 +48,7 @@ export default function LoginPage() {
         try {
             if (isForgotPassword) {
                 const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
+                    redirectTo: `${getURL()}auth/callback?next=/auth/update-password`,
                 })
                 if (resetError) throw resetError
                 setSuccess('Password reset link sent! Check your email.')
@@ -57,7 +58,7 @@ export default function LoginPage() {
                     email,
                     password,
                     options: {
-                        emailRedirectTo: `${window.location.origin}/auth/callback`,
+                        emailRedirectTo: `${getURL()}auth/callback`,
                         data: {
                             full_name: fullName,
                         }
