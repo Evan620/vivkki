@@ -735,7 +735,7 @@ export default function ClientFormSection({
                                             <AddHealthInsuranceModal
                                                 isOpen={showHealthInsuranceModal}
                                                 onClose={() => setShowHealthInsuranceModal(false)}
-                                                onSuccess={async (newInsurer) => {
+                                                onSuccess={async (newInsurer?) => {
                                                     try {
                                                         // Always refresh from database to get the latest data (including items added from dashboard)
                                                         const updatedList = await fetchHealthInsurers();

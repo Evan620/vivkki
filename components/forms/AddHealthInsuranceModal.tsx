@@ -7,7 +7,7 @@ import { X, Plus, Minus, ChevronDown, ChevronUp } from 'lucide-react';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void;
+    onSuccess: (insurer?: any) => void;
 }
 
 const CONTACT_TYPES = ['Main', 'Claims', 'Member Services', 'Billing', 'Other'];
@@ -45,7 +45,7 @@ export default function AddHealthInsuranceModal({ isOpen, onClose, onSuccess }: 
         setSaving(true);
         try {
             setError('');
-            const { error: insertError } = await supabase
+            const { data, error: insertError } = await supabase
                 .from('health_insurance')
                 .insert({
                     name: name.trim(),
@@ -68,11 +68,13 @@ export default function AddHealthInsuranceModal({ isOpen, onClose, onSuccess }: 
                     email_2_type: emails[1]?.type || null,
                     email_2: emails[1]?.address?.trim() || null,
                     notes: notes.trim() || null
-                });
+                })
+                .select()
+                .single();
 
             if (insertError) throw insertError;
 
-            onSuccess();
+            onSuccess(data);
             resetForm();
             onClose();
         } catch (e: any) {
