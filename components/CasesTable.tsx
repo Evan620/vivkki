@@ -20,6 +20,10 @@ interface Case {
     daysOpen: number;
     statuteDaysLeft?: number;
     statuteAlertLevel?: 'none' | 'warning' | 'critical' | 'expired';
+    // Helper properties added during mapping
+    caseNumber: string;
+    statuteAlert: string;
+    clientsCount?: number;
 }
 
 export function CasesTable() {
@@ -265,8 +269,8 @@ export function CasesTable() {
                         <button
                             onClick={handleViewModeChange}
                             className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${viewMode === 'archived'
-                                    ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                                    : 'bg-muted/50 hover:bg-muted text-foreground'
+                                ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                                : 'bg-muted/50 hover:bg-muted text-foreground'
                                 }`}
                         >
                             <Archive className="w-4 h-4" />
