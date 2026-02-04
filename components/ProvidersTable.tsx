@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Filter, MoreHorizontal, MapPin, Phone, Plus } from "lucide-react";
+import { Search, Filter, MoreHorizontal, MapPin, Phone, Plus, Eye, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { MedicalProvider } from "@/types";
+import { supabase } from "@/lib/supabaseClient";
+import AddProviderModal from "./forms/AddProviderModal";
 
 interface ProvidersTableProps {
     initialProviders: MedicalProvider[];
@@ -14,6 +16,8 @@ export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [typeFilter, setTypeFilter] = useState("All Types");
     const [stateFilter, setStateFilter] = useState("All States");
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
 
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -44,6 +48,24 @@ export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
     const handleTypeChange = (val: string) => { setTypeFilter(val); setCurrentPage(1); };
     const handleStateChange = (val: string) => { setStateFilter(val); setCurrentPage(1); };
     const clearFilters = () => { setSearchTerm(""); setTypeFilter("All Types"); setStateFilter("All States"); setCurrentPage(1); };
+
+    const handleDelete = async (id: number, name: string) => {
+        if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+        try {
+            const { error } = await supabase
+                .from('medical_providers')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            router.refresh();
+        } catch (error: any) {
+            console.error('Error deleting provider:', error);
+            alert('Failed to delete medical provider');
+        }
+    };
 
     return (
         <div className="space-y-4">
@@ -89,7 +111,10 @@ export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
                         >
                             Clear Filters
                         </button>
-                        <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap">
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap"
+                        >
                             <Plus className="w-4 h-4" />
                             Add Provider
                         </button>
@@ -138,10 +163,12 @@ export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
                             {currentProviders.map((p) => (
                                 <tr
                                     key={p.id}
-                                    className="hover:bg-muted/30 transition-colors group cursor-pointer"
-                                    onClick={() => router.push(`/providers/${p.id}`)}
+                                    className="hover:bg-muted/30 transition-colors group"
                                 >
-                                    <td className="px-6 py-4">
+                                    <td
+                                        className="px-6 py-4 cursor-pointer"
+                                        onClick={() => router.push(`/providers/${p.id}`)}
+                                    >
                                         <div className="font-medium text-foreground">{p.name}</div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -169,9 +196,50 @@ export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
                                         )}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors">
-                                            <MoreHorizontal className="w-4 h-4" />
-                                        </button>
+                                        <div className="relative inline-block">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenActionMenu(openActionMenu === p.id ? null : p.id);
+                                                }}
+                                                className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                                            >
+                                                <MoreHorizontal className="w-4 h-4" />
+                                            </button>
+
+                                            {openActionMenu === p.id && (
+                                                <>
+                                                    <div
+                                                        className="fixed inset-0 z-10"
+                                                        onClick={() => setOpenActionMenu(null)}
+                                                    />
+                                                    <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-md shadow-lg z-20 py-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                router.push(`/providers/${p.id}`);
+                                                                setOpenActionMenu(null);
+                                                            }}
+                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-foreground"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                            View Details
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setOpenActionMenu(null);
+                                                                handleDelete(p.id, p.name);
+                                                            }}
+                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-destructive"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -179,6 +247,15 @@ export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
                     </table>
                 </div>
             </div>
+
+            <AddProviderModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onSuccess={() => {
+                    setIsAddModalOpen(false);
+                    router.refresh();
+                }}
+            />
         </div>
     );
 }

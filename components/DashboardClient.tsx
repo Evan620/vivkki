@@ -180,8 +180,12 @@ function useCalculatedData(
 ) {
     const totalCases = cases?.length || 0;
 
-    // Active Cases (Simplified logic: anything not Closed)
-    const activeCasesCount = cases?.filter((c: any) => c.status !== 'Closed').length || 0;
+    // Active Cases (not closed in stage or status - matches legacy logic)
+    const activeCasesCount = cases?.filter((c: any) => {
+        const stage = (c.stage || '').trim();
+        const status = (c.status || '').trim();
+        return stage !== 'Closed' && status !== 'Closed';
+    }).length || 0;
 
     // Statute Alerts (≤ 90 days)
     const statuteAlertsCount = cases?.filter((c: any) => hasStatuteAlert(c.statute_deadline)).length || 0;

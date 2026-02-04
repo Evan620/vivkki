@@ -10,26 +10,11 @@ interface Props {
     onSuccess: () => void;
 }
 
-const PROVIDER_TYPES = [
-    'Hospital',
-    'Clinic',
-    'ER',
-    'Urgent Care',
-    'Primary Care',
-    'Specialist',
-    'Physical Therapy',
-    'Chiropractic',
-    'Imaging',
-    'Laboratory',
-    'Other'
-];
+const CONTACT_TYPES = ['Main', 'Claims', 'Billing', 'Other'];
 
-const CONTACT_TYPES = ['Main', 'Medical Records', 'Billing', 'Other'];
-
-export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) {
-    // Provider Information
+export default function AddAutoInsuranceModal({ isOpen, onClose, onSuccess }: Props) {
+    // Company Information
     const [name, setName] = useState('');
-    const [type, setType] = useState('Other');
 
     // Address Information
     const [streetAddress, setStreetAddress] = useState('');
@@ -53,7 +38,7 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
     const [showContactSection, setShowContactSection] = useState(false);
     const [showNotesSection, setShowNotesSection] = useState(false);
 
-    const disabled = !name.trim() || !type.trim();
+    const disabled = !name.trim();
 
     const handleSave = async () => {
         if (disabled) return;
@@ -61,10 +46,9 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
         try {
             setError('');
             const { error: insertError } = await supabase
-                .from('medical_providers')
+                .from('auto_insurance')
                 .insert({
                     name: name.trim(),
-                    type: type || 'Other',
                     street_address: streetAddress.trim() || null,
                     street_address_2: streetAddress2.trim() || null,
                     city: city.trim() || null,
@@ -92,15 +76,14 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
             resetForm();
             onClose();
         } catch (e: any) {
-            console.error('Failed to create provider', e);
-            setError(e.message || 'Could not save provider. Please try again.');
+            console.error('Failed to create auto insurer', e);
+            setError(e.message || 'Could not save auto insurance. Please try again.');
             setSaving(false);
         }
     };
 
     const resetForm = () => {
         setName('');
-        setType('Other');
         setStreetAddress('');
         setStreetAddress2('');
         setCity('');
@@ -184,7 +167,7 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
             <div className="bg-card rounded-xl shadow-2xl border border-border w-full max-w-2xl max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-border">
-                    <h2 className="text-xl font-semibold text-foreground">Add Medical Provider</h2>
+                    <h2 className="text-xl font-semibold text-foreground">Add Auto Insurance</h2>
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
@@ -202,37 +185,20 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                             </div>
                         )}
 
-                        {/* Provider Information */}
+                        {/* Company Information */}
                         <div className="space-y-4">
-                            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Provider Information</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-foreground mb-1">
-                                        Provider Name <span className="text-destructive">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
-                                        placeholder="Enter provider name"
-                                        autoFocus
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-foreground mb-1">
-                                        Provider Type <span className="text-destructive">*</span>
-                                    </label>
-                                    <select
-                                        value={type}
-                                        onChange={(e) => setType(e.target.value)}
-                                        className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
-                                    >
-                                        {PROVIDER_TYPES.map(t => (
-                                            <option key={t} value={t}>{t}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Company Information</h3>
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-1">
+                                    Company Name <span className="text-destructive">*</span>
+                                </label>
+                                <input
+                                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    placeholder="GEICO, State Farm, etc."
+                                    autoFocus
+                                />
                             </div>
                         </div>
 
@@ -251,7 +217,6 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                                     <div>
                                         <label className="block text-sm font-medium text-foreground mb-1">Street Address</label>
                                         <input
-                                            type="text"
                                             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                                             value={streetAddress}
                                             onChange={e => setStreetAddress(e.target.value)}
@@ -261,7 +226,6 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                                     <div>
                                         <label className="block text-sm font-medium text-foreground mb-1">Street Address 2</label>
                                         <input
-                                            type="text"
                                             className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                                             value={streetAddress2}
                                             onChange={e => setStreetAddress2(e.target.value)}
@@ -272,7 +236,6 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                                         <div className="col-span-2">
                                             <label className="block text-sm font-medium text-foreground mb-1">City</label>
                                             <input
-                                                type="text"
                                                 className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                                                 value={city}
                                                 onChange={e => setCity(e.target.value)}
@@ -282,7 +245,6 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                                         <div>
                                             <label className="block text-sm font-medium text-foreground mb-1">State</label>
                                             <input
-                                                type="text"
                                                 className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                                                 value={state}
                                                 onChange={e => setState(e.target.value)}
@@ -292,7 +254,6 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                                         <div>
                                             <label className="block text-sm font-medium text-foreground mb-1">ZIP Code</label>
                                             <input
-                                                type="text"
                                                 className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                                                 value={zipCode}
                                                 onChange={e => setZipCode(e.target.value)}
@@ -335,18 +296,18 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                                                 <select
                                                     value={phone.type}
                                                     onChange={e => updatePhone(index, 'type', e.target.value)}
-                                                    className="w-36 px-2 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground text-sm"
+                                                    className="w-32 px-2 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground text-sm"
                                                 >
                                                     {CONTACT_TYPES.map(t => (
                                                         <option key={t} value={t}>{t}</option>
                                                     ))}
                                                 </select>
                                                 <input
-                                                    type="tel"
                                                     className="flex-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                                                     value={phone.number}
                                                     onChange={e => updatePhone(index, 'number', e.target.value)}
                                                     placeholder="(405) 555-0000"
+                                                    type="tel"
                                                 />
                                                 {phones.length > 1 && (
                                                     <button
@@ -380,18 +341,18 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                                                 <select
                                                     value={fax.type}
                                                     onChange={e => updateFax(index, 'type', e.target.value)}
-                                                    className="w-36 px-2 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground text-sm"
+                                                    className="w-32 px-2 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground text-sm"
                                                 >
                                                     {CONTACT_TYPES.map(t => (
                                                         <option key={t} value={t}>{t}</option>
                                                     ))}
                                                 </select>
                                                 <input
-                                                    type="tel"
                                                     className="flex-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                                                     value={fax.number}
                                                     onChange={e => updateFax(index, 'number', e.target.value)}
                                                     placeholder="(405) 555-0001"
+                                                    type="tel"
                                                 />
                                                 {faxes.length > 1 && (
                                                     <button
@@ -425,18 +386,18 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                                                 <select
                                                     value={email.type}
                                                     onChange={e => updateEmail(index, 'type', e.target.value)}
-                                                    className="w-36 px-2 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground text-sm"
+                                                    className="w-32 px-2 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground text-sm"
                                                 >
                                                     {CONTACT_TYPES.map(t => (
                                                         <option key={t} value={t}>{t}</option>
                                                     ))}
                                                 </select>
                                                 <input
-                                                    type="email"
                                                     className="flex-1 px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
                                                     value={email.address}
                                                     onChange={e => updateEmail(index, 'address', e.target.value)}
-                                                    placeholder="records@provider.com"
+                                                    placeholder="claims@insurance.com"
+                                                    type="email"
                                                 />
                                                 {emails.length > 1 && (
                                                     <button
@@ -470,7 +431,7 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                                         className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground resize-none"
                                         value={notes}
                                         onChange={e => setNotes(e.target.value)}
-                                        placeholder="Add any notes about this provider..."
+                                        placeholder="Add any notes about this insurance company..."
                                         rows={4}
                                     />
                                 </div>
@@ -494,7 +455,7 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
                         disabled={disabled || saving}
                         className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 font-medium transition-colors"
                     >
-                        {saving ? 'Saving...' : 'Add Provider'}
+                        {saving ? 'Saving...' : 'Save Insurance'}
                     </button>
                 </div>
             </div>

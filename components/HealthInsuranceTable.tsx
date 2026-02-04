@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, Plus, MoreHorizontal, Phone, Shield } from "lucide-react";
+import { Search, Plus, MoreHorizontal, Phone, Eye, Trash2 } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import AddHealthInsuranceModal from "./forms/AddHealthInsuranceModal";
 
 interface HealthInsuranceTableProps {
     initialInsurance: any[];
@@ -12,6 +14,8 @@ export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableP
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [openActionMenu, setOpenActionMenu] = useState<number | null>(null);
     const itemsPerPage = 10;
 
     const filteredInsurance = initialInsurance.filter(i =>
@@ -27,6 +31,24 @@ export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableP
     // Reset to page 1 when filters change
     const handleSearchChange = (val: string) => { setSearchTerm(val); setCurrentPage(1); };
     const clearFilters = () => { setSearchTerm(""); setCurrentPage(1); };
+
+    const handleDelete = async (id: number, name: string) => {
+        if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+        try {
+            const { error } = await supabase
+                .from('health_insurance')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            router.refresh();
+        } catch (error: any) {
+            console.error('Error deleting insurance:', error);
+            alert('Failed to delete health insurance company');
+        }
+    };
 
     return (
         <div className="space-y-4">
@@ -50,7 +72,10 @@ export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableP
                     >
                         Clear Filters
                     </button>
-                    <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap">
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap"
+                    >
                         <Plus className="w-4 h-4" />
                         Add Health Insurance
                     </button>
@@ -97,10 +122,12 @@ export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableP
                             {currentInsurance.map((i) => (
                                 <tr
                                     key={i.id}
-                                    className="hover:bg-muted/30 transition-colors group cursor-pointer"
-                                    onClick={() => router.push(`/health-insurance/${i.id}`)}
+                                    className="hover:bg-muted/30 transition-colors group"
                                 >
-                                    <td className="px-6 py-4">
+                                    <td
+                                        className="px-6 py-4 cursor-pointer"
+                                        onClick={() => router.push(`/health-insurance/${i.id}`)}
+                                    >
                                         <div className="font-medium text-foreground">{i.name}</div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -112,16 +139,57 @@ export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableP
                                         )}
                                     </td>
                                     <td className="px-6 py-4">
-                                        {i.adjusters && (
+                                        {i.adjusters > 0 && (
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
                                                 {i.adjusters}
                                             </span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors">
-                                            <MoreHorizontal className="w-4 h-4" />
-                                        </button>
+                                        <div className="relative inline-block">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenActionMenu(openActionMenu === i.id ? null : i.id);
+                                                }}
+                                                className="p-2 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                                            >
+                                                <MoreHorizontal className="w-4 h-4" />
+                                            </button>
+
+                                            {openActionMenu === i.id && (
+                                                <>
+                                                    <div
+                                                        className="fixed inset-0 z-10"
+                                                        onClick={() => setOpenActionMenu(null)}
+                                                    />
+                                                    <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-md shadow-lg z-20 py-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                router.push(`/health-insurance/${i.id}`);
+                                                                setOpenActionMenu(null);
+                                                            }}
+                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-foreground"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                            View Details
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setOpenActionMenu(null);
+                                                                handleDelete(i.id, i.name);
+                                                            }}
+                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-destructive"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -129,6 +197,15 @@ export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableP
                     </table>
                 </div>
             </div>
+
+            <AddHealthInsuranceModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onSuccess={() => {
+                    setIsAddModalOpen(false);
+                    router.refresh();
+                }}
+            />
         </div>
     );
 }
