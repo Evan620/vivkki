@@ -251,9 +251,47 @@ export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
             <AddProviderModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
-                onSuccess={() => {
-                    setIsAddModalOpen(false);
-                    router.refresh();
+                onSave={async (name, type, city, savePermanently, additionalData) => {
+                    try {
+                        const { error } = await supabase
+                            .from('medical_providers')
+                            .insert({
+                                name,
+                                type: type || 'Other',
+                                street_address: additionalData?.streetAddress || null,
+                                street_address_2: additionalData?.streetAddress2 || null,
+                                city: city || null,
+                                state: additionalData?.state || 'OK',
+                                zip_code: additionalData?.zipCode || null,
+                                phone: additionalData?.phones?.[0]?.number || '',
+                                phone_1_type: additionalData?.phones?.[0]?.type || null,
+                                phone_1: additionalData?.phones?.[0]?.number || null,
+                                phone_2_type: additionalData?.phones?.[1]?.type || null,
+                                phone_2: additionalData?.phones?.[1]?.number || null,
+                                phone_3_type: additionalData?.phones?.[2]?.type || null,
+                                phone_3: additionalData?.phones?.[2]?.number || null,
+                                fax_1_type: additionalData?.faxes?.[0]?.type || null,
+                                fax_1: additionalData?.faxes?.[0]?.number || null,
+                                fax_2_type: additionalData?.faxes?.[1]?.type || null,
+                                fax_2: additionalData?.faxes?.[1]?.number || null,
+                                fax_3_type: additionalData?.faxes?.[2]?.type || null,
+                                fax_3: additionalData?.faxes?.[2]?.number || null,
+                                email_1_type: additionalData?.emails?.[0]?.type || null,
+                                email_1: additionalData?.emails?.[0]?.address || null,
+                                email_2_type: additionalData?.emails?.[1]?.type || null,
+                                email_2: additionalData?.emails?.[1]?.address || null,
+                                notes: additionalData?.notes || null,
+                                request_method: 'Email'
+                            });
+
+                        if (error) throw error;
+
+                        setIsAddModalOpen(false);
+                        router.refresh();
+                    } catch (error) {
+                        console.error('Error adding provider:', error);
+                        throw error;
+                    }
                 }}
             />
         </div>

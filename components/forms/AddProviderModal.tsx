@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
 import { X, Plus, Minus, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void;
+    onSave: (name: string, type: string, city: string, savePermanently: boolean, additionalData: any) => Promise<void>;
 }
 
 const PROVIDER_TYPES = [
@@ -26,7 +25,7 @@ const PROVIDER_TYPES = [
 
 const CONTACT_TYPES = ['Main', 'Medical Records', 'Billing', 'Other'];
 
-export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) {
+export default function AddProviderModal({ isOpen, onClose, onSave }: Props) {
     // Provider Information
     const [name, setName] = useState('');
     const [type, setType] = useState('Other');
@@ -60,35 +59,22 @@ export default function AddProviderModal({ isOpen, onClose, onSuccess }: Props) 
         setSaving(true);
         try {
             setError('');
-            const { error: insertError } = await supabase
-                .from('medical_providers')
-                .insert({
-                    name: name.trim(),
-                    type: type || 'Other',
-                    street_address: streetAddress.trim() || null,
-                    street_address_2: streetAddress2.trim() || null,
-                    city: city.trim() || null,
-                    state: state.trim() || 'OK',
-                    zip_code: zipCode.trim() || null,
-                    phone: phones[0]?.number?.trim() || '',
-                    phone_1_type: phones[0]?.type || null,
-                    phone_1: phones[0]?.number?.trim() || null,
-                    phone_2_type: phones[1]?.type || null,
-                    phone_2: phones[1]?.number?.trim() || null,
-                    fax_1_type: faxes[0]?.type || null,
-                    fax_1: faxes[0]?.number?.trim() || null,
-                    fax_2_type: faxes[1]?.type || null,
-                    fax_2: faxes[1]?.number?.trim() || null,
-                    email_1_type: emails[0]?.type || null,
-                    email_1: emails[0]?.address?.trim() || null,
-                    email_2_type: emails[1]?.type || null,
-                    email_2: emails[1]?.address?.trim() || null,
-                    notes: notes.trim() || null
-                });
 
-            if (insertError) throw insertError;
+            // Prepare additional data
+            const additionalData = {
+                streetAddress,
+                streetAddress2,
+                state,
+                zipCode,
+                phones,
+                faxes,
+                emails,
+                notes
+            };
 
-            onSuccess();
+            // Call parent's onSave with all the data
+            await onSave(name.trim(), type, city.trim(), true, additionalData);
+
             resetForm();
             onClose();
         } catch (e: any) {
