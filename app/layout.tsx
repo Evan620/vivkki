@@ -37,12 +37,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <div className="fixed inset-0 z-[-1] bg-grid-small pointer-events-none opacity-100 transition-opacity" />
-            <div className="relative z-0">
-              <AppShell>
-                {children}
-              </AppShell>
-            </div>
+            <AppShell>
+              {children}
+            </AppShell>
           </AuthProvider>
         </ThemeProvider>
       </body>

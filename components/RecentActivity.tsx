@@ -13,7 +13,7 @@ interface RecentActivityProps {
     activities: {
         id: number | string;
         description: string;
-        created_at: string;
+        timestamp: string;
         action_type?: string;
     }[];
 }
@@ -33,7 +33,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
     const formattedActivities = activities.map(act => ({
         id: act.id,
         text: act.description,
-        date: act.created_at ? formatDistanceToNow(parseISO(act.created_at), { addSuffix: true }) : 'Unknown date',
+        date: act.timestamp ? formatDistanceToNow(parseISO(act.timestamp), { addSuffix: true }) : 'Unknown date',
         icon: getIcon(act.action_type)
     }));
 
