@@ -44,7 +44,7 @@ export function AddClientModal({
         work_impact: "",
         referrer: "",
         referrer_relationship: "",
-        client_number: 1
+        client_order: 1
     });
 
     useEffect(() => {
@@ -71,7 +71,7 @@ export function AddClientModal({
                     work_impact: client.work_impact || "",
                     referrer: client.referrer || "",
                     referrer_relationship: client.referrer_relationship || "",
-                    client_number: client.client_number || 1
+                    client_order: client.client_order || 1
                 });
             } else {
                 setFormData({
@@ -95,7 +95,7 @@ export function AddClientModal({
                     work_impact: "",
                     referrer: "",
                     referrer_relationship: "",
-                    client_number: 1
+                    client_order: 1
                 });
             }
         }
@@ -128,7 +128,7 @@ export function AddClientModal({
                 work_impact: formData.work_impact || null,
                 referrer: formData.referrer || null,
                 referrer_relationship: formData.referrer_relationship || null,
-                client_number: formData.client_number
+                client_order: formData.client_order
             };
 
             let error;
@@ -244,13 +244,13 @@ export function AddClientModal({
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-foreground mb-2">Client Number</label>
+                                <label className="block text-sm font-medium text-foreground mb-2">Client Order</label>
                                 <input
                                     type="number"
                                     min="1"
                                     className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                    value={formData.client_number}
-                                    onChange={e => setFormData({ ...formData, client_number: Number(e.target.value) })}
+                                    value={formData.client_order}
+                                    onChange={e => setFormData({ ...formData, client_order: Number(e.target.value) })}
                                 />
                             </div>
                             <div className="flex items-center">
