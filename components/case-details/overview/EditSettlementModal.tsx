@@ -5,7 +5,8 @@ import { X, Save, DollarSign } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 interface SettlementData {
-    settlement_date: string;
+    id?: string | number;
+    settlement_date?: string | null;
     gross_settlement: number;
     attorney_fee: number;
     attorney_fee_percentage: number;

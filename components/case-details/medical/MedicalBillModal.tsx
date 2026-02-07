@@ -8,7 +8,7 @@ interface MedicalBillData {
     id?: number;
     client_id: number;
     medical_provider_id: number;
-    date_of_service: string;
+    date_of_service?: string;
     total_billed: number;
     insurance_paid: number;
     insurance_adjusted: number;

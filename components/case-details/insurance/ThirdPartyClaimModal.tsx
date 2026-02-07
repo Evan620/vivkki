@@ -32,8 +32,7 @@ export function ThirdPartyClaimModal({
         claim_number: "",
         policy_limits: 0,
         demand_amount: 0,
-        offer_amount: 0,
-        last_request_date: ""
+        offer_amount: 0
     });
 
     useEffect(() => {
@@ -50,8 +49,7 @@ export function ThirdPartyClaimModal({
                     claim_number: claim.claim_number || "",
                     policy_limits: claim.policy_limits || 0,
                     demand_amount: claim.demand_amount || 0,
-                    offer_amount: claim.offer_amount || 0,
-                    last_request_date: claim.last_request_date || ""
+                    offer_amount: claim.offer_amount || 0
                 });
             } else {
                 setFormData({
@@ -60,8 +58,7 @@ export function ThirdPartyClaimModal({
                     claim_number: "",
                     policy_limits: 0,
                     demand_amount: 0,
-                    offer_amount: 0,
-                    last_request_date: ""
+                    offer_amount: 0
                 });
             }
         }
@@ -79,8 +76,7 @@ export function ThirdPartyClaimModal({
                 claim_number: formData.claim_number || null,
                 policy_limits: formData.policy_limits || 0,
                 demand_amount: formData.demand_amount || 0,
-                offer_amount: formData.offer_amount || 0,
-                last_request_date: formData.last_request_date || null
+                offer_amount: formData.offer_amount || 0
             };
 
             let error;
@@ -205,20 +201,6 @@ export function ThirdPartyClaimModal({
                                     onChange={e => setFormData({ ...formData, offer_amount: Number(e.target.value) })}
                                 />
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Last Request Date */}
-                    <div className="bg-muted/50 rounded-lg p-4">
-                        <h4 className="font-bold text-sm mb-4">Document Tracking</h4>
-                        <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Last Request Date</label>
-                            <input
-                                type="date"
-                                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                value={formData.last_request_date}
-                                onChange={e => setFormData({ ...formData, last_request_date: e.target.value })}
-                            />
                         </div>
                     </div>
 
