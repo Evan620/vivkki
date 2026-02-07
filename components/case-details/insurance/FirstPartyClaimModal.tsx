@@ -27,7 +27,7 @@ export function FirstPartyClaimModal({
     const [loading, setLoading] = useState(false);
     const [insuranceCompanies, setInsuranceCompanies] = useState<any[]>([]);
     const [formData, setFormData] = useState({
-        auto_insurance_id: "",
+        auto_insurance_id: 0,
         policy_number: "",
         claim_number: "",
         pip_available: 0,
@@ -45,7 +45,7 @@ export function FirstPartyClaimModal({
 
             if (claim) {
                 setFormData({
-                    auto_insurance_id: claim.auto_insurance_id || "",
+                    auto_insurance_id: claim.auto_insurance_id || 0,
                     policy_number: claim.policy_number || "",
                     claim_number: claim.claim_number || "",
                     pip_available: claim.pip_available || 0,
@@ -55,7 +55,7 @@ export function FirstPartyClaimModal({
                 });
             } else {
                 setFormData({
-                    auto_insurance_id: "",
+                    auto_insurance_id: 0,
                     policy_number: "",
                     claim_number: "",
                     pip_available: 5000,
@@ -132,7 +132,7 @@ export function FirstPartyClaimModal({
                         <select
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                             value={formData.auto_insurance_id}
-                            onChange={e => setFormData({ ...formData, auto_insurance_id: e.target.value })}
+                            onChange={e => setFormData({ ...formData, auto_insurance_id: Number(e.target.value) || 0 })}
                         >
                             <option value="">Select Insurance Company</option>
                             {insuranceCompanies.map(company => (

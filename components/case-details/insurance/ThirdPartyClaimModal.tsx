@@ -27,7 +27,7 @@ export function ThirdPartyClaimModal({
     const [loading, setLoading] = useState(false);
     const [insuranceCompanies, setInsuranceCompanies] = useState<any[]>([]);
     const [formData, setFormData] = useState({
-        auto_insurance_id: "",
+        auto_insurance_id: 0,
         policy_number: "",
         claim_number: "",
         policy_limits: 0,
@@ -47,7 +47,7 @@ export function ThirdPartyClaimModal({
 
             if (claim) {
                 setFormData({
-                    auto_insurance_id: claim.auto_insurance_id || "",
+                    auto_insurance_id: claim.auto_insurance_id || 0,
                     policy_number: claim.policy_number || "",
                     claim_number: claim.claim_number || "",
                     policy_limits: claim.policy_limits || 0,
@@ -59,7 +59,7 @@ export function ThirdPartyClaimModal({
                 });
             } else {
                 setFormData({
-                    auto_insurance_id: "",
+                    auto_insurance_id: 0,
                     policy_number: "",
                     claim_number: "",
                     policy_limits: 0,
@@ -140,7 +140,7 @@ export function ThirdPartyClaimModal({
                         <select
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                             value={formData.auto_insurance_id}
-                            onChange={e => setFormData({ ...formData, auto_insurance_id: e.target.value })}
+                            onChange={e => setFormData({ ...formData, auto_insurance_id: Number(e.target.value) || 0 })}
                         >
                             <option value="">Select Insurance Company</option>
                             {insuranceCompanies.map(company => (
