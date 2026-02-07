@@ -14,7 +14,7 @@ import { WorkLogList } from "@/components/case-details/work-log/WorkLogList";
 import { DocumentList } from "@/components/case-details/documents/DocumentList";
 import { CaseDetail } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, Suspense } from "react";
 import { notFound, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -200,44 +200,69 @@ async function fetchMedicalData(caseId: string) {
 }
 
 async function fetchInsuranceData(caseId: string) {
-    // 1. Fetch clients & defendants
-    const { data: clients } = await supabase.from('clients').select('*').eq('casefile_id', caseId);
-    const { data: defendants } = await supabase.from('defendants').select('*').eq('casefile_id', caseId);
+    try {
+        // 1. Fetch clients & defendants
+        const { data: clients, error: clientsError } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('casefile_id', caseId);
+        if (clientsError) {
+            console.error('Error fetching clients:', clientsError);
+        }
 
-    const clientIds = (clients || []).map(c => c.id);
-    const defendantIds = (defendants || []).map(d => d.id);
+        const { data: defendants, error: defendantsError } = await supabase
+            .from('defendants')
+            .select('*')
+            .eq('casefile_id', caseId);
+        if (defendantsError) {
+            console.error('Error fetching defendants:', defendantsError);
+        }
 
-    // 2. Fetch First Party Claims
-    let firstPartyClaims: any[] = [];
-    if (clientIds.length > 0) {
-        const { data } = await supabase
-            .from('first_party_claims')
-            .select('*, auto_insurance:insurance_companies(name)')
-            .in('client_id', clientIds);
-        firstPartyClaims = data || [];
+        const clientIds = (clients || []).map(c => c.id);
+        const defendantIds = (defendants || []).map(d => d.id);
+
+        // 2. Fetch First Party Claims
+        let firstPartyClaims: any[] = [];
+        if (clientIds.length > 0) {
+            const { data, error } = await supabase
+                .from('first_party_claims')
+                .select('*, auto_insurance(name)')
+                .in('client_id', clientIds);
+            if (error) {
+                console.error('Error fetching first party claims:', error);
+            }
+            firstPartyClaims = data || [];
+        }
+
+        // 3. Fetch Third Party Claims
+        let thirdPartyClaims: any[] = [];
+        if (defendantIds.length > 0) {
+            const { data, error } = await supabase
+                .from('third_party_claims')
+                .select('*, auto_insurance(name)')
+                .in('defendant_id', defendantIds);
+            if (error) {
+                console.error('Error fetching third party claims:', error);
+            }
+            thirdPartyClaims = data || [];
+        }
+
+        return {
+            firstPartyClaims,
+            thirdPartyClaims,
+            clients: clients || [],
+            defendants: defendants || []
+        };
+    } catch (error) {
+        console.error('Error in fetchInsuranceData:', error);
+        // Return empty structure to prevent UI breakage
+        return {
+            firstPartyClaims: [],
+            thirdPartyClaims: [],
+            clients: [],
+            defendants: []
+        };
     }
-
-    // 3. Fetch Third Party Claims
-    let thirdPartyClaims: any[] = [];
-    if (defendantIds.length > 0) {
-        const { data } = await supabase
-            .from('third_party_claims')
-            .select('*, auto_insurance:insurance_companies(name)')
-            .in('defendant_id', defendantIds);
-        thirdPartyClaims = data || [];
-    }
-
-    // Map relation name back to auto_insurance for simpler typed access if needed, 
-    // though Supabase returns it as nested object 'auto_insurance': { name: ... } which matches our type.
-    // Note: table name is insurance_companies? I should verify.
-    // Legacy used 'entry.auto_insurance?.name'.
-
-    return {
-        firstPartyClaims,
-        thirdPartyClaims,
-        clients: clients || [],
-        defendants: defendants || []
-    };
 }
 
 async function fetchWorkLogs(caseId: string) {
@@ -267,7 +292,7 @@ async function fetchDocuments(caseId: string) {
     return data || [];
 }
 
-export default function CaseDetailsPage({
+function CaseDetailsContent({
     params
 }: {
     params: Promise<{ id: string }>
@@ -393,5 +418,21 @@ export default function CaseDetailsPage({
                 {content}
             </div>
         </div>
+    );
+}
+
+export default function CaseDetailsPage({
+    params
+}: {
+    params: Promise<{ id: string }>
+}) {
+    return (
+        <Suspense fallback={
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        }>
+            <CaseDetailsContent params={params} />
+        </Suspense>
     );
 }

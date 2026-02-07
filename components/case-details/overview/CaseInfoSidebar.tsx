@@ -2,15 +2,26 @@
 
 import { CaseDetail } from "@/types";
 import { User } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface CaseInfoSidebarProps {
     caseDetail: CaseDetail;
 }
 
 export function CaseInfoSidebar({ caseDetail }: CaseInfoSidebarProps) {
+    const router = useRouter();
+
+    const handleViewClientInfo = () => {
+        // Navigate to clients tab
+        router.push(`?tab=Clients`);
+    };
+
     return (
         <div className="space-y-6">
-            <button className="w-full bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+            <button 
+                onClick={handleViewClientInfo}
+                className="w-full bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
                 <User className="w-4 h-4" />
                 View Client Information
             </button>

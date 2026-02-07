@@ -2,17 +2,28 @@
 
 import { CaseDetail } from "@/types";
 import { FileText, Info, CheckCircle2, Circle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface RecentActivityProps {
     caseDetail: CaseDetail;
 }
 
 export function RecentActivity({ caseDetail }: RecentActivityProps) {
+    const router = useRouter();
+
+    const handleViewAll = () => {
+        // Navigate to work log tab
+        router.push(`?tab=Work Log`);
+    };
+
     return (
         <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between">
                 <h3 className="font-semibold text-foreground">Recent Activity</h3>
-                <button className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
+                <button 
+                    onClick={handleViewAll}
+                    className="text-xs text-primary hover:text-primary/80 font-medium transition-colors cursor-pointer"
+                >
                     View All →
                 </button>
             </div>

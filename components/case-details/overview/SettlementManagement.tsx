@@ -2,6 +2,7 @@
 
 import { CaseDetail } from "@/types";
 import { Edit2 } from "lucide-react";
+import { useState } from "react";
 
 interface SettlementManagementProps {
     caseDetail: CaseDetail;
@@ -9,6 +10,15 @@ interface SettlementManagementProps {
 
 export function SettlementManagement({ caseDetail }: SettlementManagementProps) {
     const { settlement } = caseDetail;
+    const [isEditing, setIsEditing] = useState(false);
+
+    const handleEdit = () => {
+        // TODO: Implement settlement editing
+        console.log('Edit settlement clicked');
+        setIsEditing(true);
+        alert('Settlement editing feature coming soon!');
+    };
+
     return (
         <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
@@ -58,9 +68,12 @@ export function SettlementManagement({ caseDetail }: SettlementManagementProps) 
                 <div className="text-sm text-muted-foreground">
                     Settlement Date: <span className="font-medium text-foreground">{settlement.date}</span>
                 </div>
-                <button className="flex items-center gap-2 text-primary hover:text-primary/80 font-medium text-sm transition-colors">
+                <button 
+                    onClick={handleEdit}
+                    className="flex items-center gap-2 text-primary hover:text-primary/80 font-medium text-sm transition-colors cursor-pointer"
+                >
                     <Edit2 className="w-4 h-4" />
-                    Click edit to add settlement information
+                    {isEditing ? 'Editing...' : 'Click edit to add settlement information'}
                 </button>
             </div>
         </div>

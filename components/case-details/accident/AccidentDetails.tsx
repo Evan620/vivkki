@@ -20,6 +20,12 @@ export function AccidentDetails({ caseDetail }: AccidentDetailsProps) {
         return timeStr;
     };
 
+    const handleEdit = () => {
+        // TODO: Implement accident details editing
+        console.log('Edit accident details clicked');
+        alert('Accident details editing feature coming soon!');
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
@@ -29,7 +35,8 @@ export function AccidentDetails({ caseDetail }: AccidentDetailsProps) {
                         <span>Accident Details</span>
                     </h3>
                     <button
-                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                        onClick={handleEdit}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
                     >
                         <Edit2 className="w-4 h-4" />
                         <span>Edit</span>
