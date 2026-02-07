@@ -3,25 +3,12 @@
 import { useState, useEffect } from "react";
 import { X, Save, Scale, DollarSign } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-
-interface ThirdPartyClaimData {
-    id?: number;
-    defendant_id: number;
-    auto_insurance_id?: string;
-    policy_number: string;
-    claim_number: string;
-    policy_limits: number;
-    demand_amount: number;
-    offer_amount: number;
-    lor_sent: boolean;
-    loa_received: boolean;
-    last_request_date: string | null;
-}
+import { ThirdPartyClaim } from "@/types";
 
 interface ThirdPartyClaimModalProps {
     isOpen: boolean;
     onClose: () => void;
-    claim: ThirdPartyClaimData | null;
+    claim: ThirdPartyClaim | null;
     defendantId: number;
     casefileId: string;
     onUpdate: () => void;

@@ -3,23 +3,12 @@
 import { useState, useEffect } from "react";
 import { X, Save, Shield, DollarSign } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-
-interface FirstPartyClaimData {
-    id?: number;
-    client_id: number;
-    auto_insurance_id?: string;
-    policy_number: string;
-    claim_number: string;
-    pip_available: number;
-    pip_used: number;
-    med_pay_available: number;
-    med_pay_used: number;
-}
+import { FirstPartyClaim } from "@/types";
 
 interface FirstPartyClaimModalProps {
     isOpen: boolean;
     onClose: () => void;
-    claim: FirstPartyClaimData | null;
+    claim: FirstPartyClaim | null;
     clientId: number;
     casefileId: string;
     onUpdate: () => void;

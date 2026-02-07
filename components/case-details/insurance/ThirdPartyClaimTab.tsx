@@ -130,7 +130,7 @@ export function ThirdPartyClaimTab({
             <ThirdPartyClaimModal
                 isOpen={!!modalDefendant}
                 onClose={() => setModalDefendant(null)}
-                claim={modalDefendant ? getClaimForDefendant(modalDefendant.id) : null}
+                claim={modalDefendant ? getClaimForDefendant(modalDefendant.id) ?? null : null}
                 defendantId={modalDefendant?.id || 0}
                 casefileId={casefileId}
                 onUpdate={handleUpdate}

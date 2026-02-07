@@ -163,7 +163,7 @@ export function FirstPartyClaimTab({
             <FirstPartyClaimModal
                 isOpen={!!modalClient}
                 onClose={() => setModalClient(null)}
-                claim={modalClient ? getClaimForClient(modalClient.id) : null}
+                claim={modalClient ? getClaimForClient(modalClient.id) ?? null : null}
                 clientId={modalClient?.id || 0}
                 casefileId={casefileId}
                 onUpdate={handleUpdate}
