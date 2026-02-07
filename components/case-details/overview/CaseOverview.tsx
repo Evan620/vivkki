@@ -10,9 +10,11 @@ import { SettlementManagement } from "./SettlementManagement";
 
 interface CaseOverviewProps {
     caseDetail: CaseDetail;
+    casefileId: string;
+    onUpdate?: () => void;
 }
 
-export function CaseOverview({ caseDetail }: CaseOverviewProps) {
+export function CaseOverview({ caseDetail, casefileId, onUpdate }: CaseOverviewProps) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Left Sidebar */}
@@ -33,7 +35,7 @@ export function CaseOverview({ caseDetail }: CaseOverviewProps) {
 
                 <RecentActivity caseDetail={caseDetail} />
 
-                <SettlementManagement caseDetail={caseDetail} />
+                <SettlementManagement caseDetail={caseDetail} casefileId={casefileId} onUpdate={onUpdate} />
             </div>
         </div>
     );

@@ -5,21 +5,44 @@ import { DollarSign, Filter, Heart, FileText, Plus, Shield, Receipt, CreditCard,
 import { calculateMedicalBillBalanceDue, formatCurrency } from "@/lib/calculations";
 import type { MedicalBill, Client, HealthClaim } from "@/types";
 import { cn } from "@/lib/utils";
+import { MedicalBillModal } from "./MedicalBillModal";
 
 interface MedicalDetailsProps {
     medicalBills: MedicalBill[];
     clients: Client[];
     healthClaim?: HealthClaim | null;
     casefileId: number;
+    onUpdate?: () => void;
 }
 
 export function MedicalDetails({
     medicalBills = [],
     clients = [],
     healthClaim,
-    casefileId
+    casefileId,
+    onUpdate
 }: MedicalDetailsProps) {
     const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingBill, setEditingBill] = useState<MedicalBill | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const handleShowToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleUpdate = () => {
+        if (onUpdate) onUpdate();
+    };
+
+    const handleAddBill = () => {
+        setIsAddModalOpen(true);
+    };
+
+    const handleEditBill = (bill: MedicalBill) => {
+        setEditingBill(bill);
+    };
 
     // Filter bills by selected client
     const filteredBills = useMemo(() => {
@@ -140,6 +163,12 @@ export function MedicalDetails({
                                 ))}
                             </select>
                         </div>
+                        <button
+                            onClick={handleAddBill}
+                            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" /> Add Bill
+                        </button>
                     </div>
                 </div>
 
@@ -204,6 +233,34 @@ export function MedicalDetails({
                     </table>
                 </div>
             </div>
+
+            <MedicalBillModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                bill={null}
+                clients={clients}
+                casefileId={String(casefileId)}
+                onUpdate={handleUpdate}
+                onShowToast={handleShowToast}
+            />
+
+            <MedicalBillModal
+                isOpen={!!editingBill}
+                onClose={() => setEditingBill(null)}
+                bill={editingBill}
+                clients={clients}
+                casefileId={String(casefileId)}
+                onUpdate={handleUpdate}
+                onShowToast={handleShowToast}
+            />
+
+            {toast && (
+                <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+                    toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                }`}>
+                    {toast.message}
+                </div>
+            )}
         </div>
     );
 }

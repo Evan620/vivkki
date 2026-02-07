@@ -10,7 +10,9 @@ interface InsuranceDetailsProps {
     firstPartyClaims: FirstPartyClaim[];
     thirdPartyClaims: ThirdPartyClaim[];
     clients: Client[];
-    defendants: CaseDetail['defendants']; // Using type from CaseDetail which has basic info needed for mapping
+    defendants: CaseDetail['defendants'];
+    casefileId: string;
+    onUpdate?: () => void;
 }
 
 type SubTab = 'first-party' | 'third-party';
@@ -19,7 +21,9 @@ export function InsuranceDetails({
     firstPartyClaims,
     thirdPartyClaims,
     clients,
-    defendants
+    defendants,
+    casefileId,
+    onUpdate
 }: InsuranceDetailsProps) {
     const [activeSubTab, setActiveSubTab] = useState<SubTab>('first-party');
 
@@ -71,9 +75,9 @@ export function InsuranceDetails({
             {activeSubTab === 'first-party' && (
                 <FirstPartyClaimTab
                     firstPartyClaims={firstPartyClaims}
-                    // Map generic client from props to specific shape if needed, 
-                    // dependent on how 'clients' are passed from parent page
                     clients={clients}
+                    casefileId={casefileId}
+                    onUpdate={onUpdate}
                 />
             )}
 
@@ -81,6 +85,8 @@ export function InsuranceDetails({
                 <ThirdPartyClaimTab
                     thirdPartyClaims={thirdPartyClaims}
                     defendants={mappedDefendants}
+                    casefileId={casefileId}
+                    onUpdate={onUpdate}
                 />
             )}
         </div>

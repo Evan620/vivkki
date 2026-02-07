@@ -3,16 +3,37 @@
 import { Shield, DollarSign, User, Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
 import { FirstPartyClaim, Client } from "@/types";
+import { useState } from "react";
+import { FirstPartyClaimModal } from "./FirstPartyClaimModal";
 
 interface FirstPartyClaimTabProps {
     firstPartyClaims: FirstPartyClaim[];
-    clients: Client[]; // Using Client type from types which might be slightly different than legacy 'any' but should map
+    clients: Client[];
+    casefileId: string;
+    onUpdate?: () => void;
 }
 
 export function FirstPartyClaimTab({
     firstPartyClaims = [],
-    clients = []
+    clients = [],
+    casefileId,
+    onUpdate
 }: FirstPartyClaimTabProps) {
+    const [modalClient, setModalClient] = useState<Client | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const handleShowToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleUpdate = () => {
+        if (onUpdate) onUpdate();
+    };
+
+    const handleOpenModal = (client: Client) => {
+        setModalClient(client);
+    };
 
     // Helper to find claim for client
     const getClaimForClient = (clientId: number) => {
@@ -57,7 +78,10 @@ export function FirstPartyClaimTab({
                                     <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-full">Driver</span>
                                 )}
                             </div>
-                            <button className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors">
+                            <button
+                                onClick={() => handleOpenModal(client)}
+                                className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors"
+                            >
                                 {claim ? 'Edit' : 'Add Insurance'}
                             </button>
                         </div>
@@ -135,6 +159,24 @@ export function FirstPartyClaimTab({
                     </div>
                 );
             })}
+
+            <FirstPartyClaimModal
+                isOpen={!!modalClient}
+                onClose={() => setModalClient(null)}
+                claim={modalClient ? getClaimForClient(modalClient.id) : null}
+                clientId={modalClient?.id || 0}
+                casefileId={casefileId}
+                onUpdate={handleUpdate}
+                onShowToast={handleShowToast}
+            />
+
+            {toast && (
+                <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+                    toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                }`}>
+                    {toast.message}
+                </div>
+            )}
         </div>
     );
 }

@@ -3,26 +3,44 @@
 import { Scale, DollarSign, User } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
 import { ThirdPartyClaim, CaseDetail } from "@/types";
+import { useState } from "react";
+import { ThirdPartyClaimModal } from "./ThirdPartyClaimModal";
 
-// Need Defendant type roughly matches CaseDetail['defendants'][0] but with more fields if fetched fully.
-// For now we map strictly to what we need
 interface Defendant {
     id: number;
     first_name: string;
     last_name: string;
     liability_percentage?: number;
-    // other fields...
 }
 
 interface ThirdPartyClaimTabProps {
     thirdPartyClaims: ThirdPartyClaim[];
     defendants: Defendant[];
+    casefileId: string;
+    onUpdate?: () => void;
 }
 
 export function ThirdPartyClaimTab({
     thirdPartyClaims = [],
-    defendants = []
+    defendants = [],
+    casefileId,
+    onUpdate
 }: ThirdPartyClaimTabProps) {
+    const [modalDefendant, setModalDefendant] = useState<Defendant | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const handleShowToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleUpdate = () => {
+        if (onUpdate) onUpdate();
+    };
+
+    const handleOpenModal = (defendant: Defendant) => {
+        setModalDefendant(defendant);
+    };
 
     const getClaimForDefendant = (defId: number) => {
         return thirdPartyClaims.find(c => c.defendant_id === defId);
@@ -55,7 +73,10 @@ export function ThirdPartyClaimTab({
                                     {liability}% Liability
                                 </span>
                             </div>
-                            <button className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors">
+                            <button
+                                onClick={() => handleOpenModal(defendant)}
+                                className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors"
+                            >
                                 {claim ? 'Edit' : 'Add Liability Claim'}
                             </button>
                         </div>
@@ -105,6 +126,24 @@ export function ThirdPartyClaimTab({
                     </div>
                 )
             })}
+
+            <ThirdPartyClaimModal
+                isOpen={!!modalDefendant}
+                onClose={() => setModalDefendant(null)}
+                claim={modalDefendant ? getClaimForDefendant(modalDefendant.id) : null}
+                defendantId={modalDefendant?.id || 0}
+                casefileId={casefileId}
+                onUpdate={handleUpdate}
+                onShowToast={handleShowToast}
+            />
+
+            {toast && (
+                <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+                    toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                }`}>
+                    {toast.message}
+                </div>
+            )}
         </div>
     );
 }

@@ -12,6 +12,7 @@ import { ClientList } from "@/components/case-details/clients/ClientList";
 import { DefendantList } from "@/components/case-details/defendants/DefendantList";
 import { WorkLogList } from "@/components/case-details/work-log/WorkLogList";
 import { DocumentList } from "@/components/case-details/documents/DocumentList";
+import { TabTransition } from "@/components/case-details/TabTransition";
 import { CaseDetail } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
 import { useEffect, useState, use, Suspense } from "react";
@@ -304,42 +305,103 @@ function CaseDetailsContent({
     const [caseDetail, setCaseDetail] = useState<CaseDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [medicalData, setMedicalData] = useState<any>(null);
+    const [isTabTransitioning, setIsTabTransitioning] = useState(false);
+
+    const loadData = async (currentTab?: string) => {
+        const tabToLoad = currentTab || activeTab;
+        setIsTabTransitioning(true);
+        try {
+            const detail = await fetchCaseDetail(id);
+            setCaseDetail(detail);
+
+            let newMedicalData = null;
+
+            if (tabToLoad === 'medical' || tabToLoad === 'clients') {
+                const medical = await fetchMedicalData(id);
+                newMedicalData = medical;
+            } else if (tabToLoad === 'insurance' || tabToLoad === 'defendant') {
+                const insuranceData = await fetchInsuranceData(id);
+                newMedicalData = insuranceData;
+            } else if (tabToLoad === 'work log' || tabToLoad === 'case notes') {
+                const logs = await fetchWorkLogs(id);
+                newMedicalData = { workLogs: logs };
+            } else if (tabToLoad === 'documents') {
+                const docs = await fetchDocuments(id);
+                newMedicalData = { documents: docs };
+            }
+
+            setMedicalData(newMedicalData);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+            setTimeout(() => setIsTabTransitioning(false), 50);
+        }
+    };
 
     useEffect(() => {
-        let isMounted = true;
-        async function loadData() {
-            setLoading(true);
-            setMedicalData(null); // Clear previous tab data immediately
-            try {
-                const detail = await fetchCaseDetail(id);
-                if (isMounted) setCaseDetail(detail);
-
-                if (activeTab === 'medical' || activeTab === 'clients') {
-                    // Clients tab uses the same detailed data (bills, full client info) as Medical tab
-                    const medical = await fetchMedicalData(id);
-                    if (isMounted) setMedicalData(medical);
-                } else if (activeTab === 'insurance' || activeTab === 'defendant') {
-                    // Reuse fetchInsuranceData for clients/defendants as it returns them
-                    const insuranceData = await fetchInsuranceData(id);
-                    if (isMounted) setMedicalData(insuranceData);
-                } else if (activeTab === 'work log') {
-                    const logs = await fetchWorkLogs(id);
-                    if (isMounted) setMedicalData({ workLogs: logs });
-                } else if (activeTab === 'documents') {
-                    const docs = await fetchDocuments(id);
-                    if (isMounted) setMedicalData({ documents: docs });
-                } else {
-                    if (isMounted) setMedicalData(null);
-                }
-            } catch (error) {
-                console.error(error);
-            } finally {
-                if (isMounted) setLoading(false);
-            }
-        }
         loadData();
-        return () => { isMounted = false; };
     }, [id, activeTab]);
+
+    // Render content based on current tab and data
+    const renderContent = () => {
+        if (!caseDetail) return null;
+
+        const dataToUse = isTabTransitioning ? medicalData : medicalData;
+
+        switch (activeTab) {
+            case 'medical':
+                return dataToUse ? (
+                    <MedicalDetails
+                        medicalBills={dataToUse.medicalBills}
+                        clients={dataToUse.clients}
+                        healthClaim={dataToUse.healthClaim}
+                        casefileId={parseInt(id)}
+                        onUpdate={loadData}
+                    />
+                ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
+            case 'accident':
+                return <AccidentDetails caseDetail={caseDetail} casefileId={id} onUpdate={loadData} />;
+            case 'insurance':
+                return dataToUse ? (
+                    <InsuranceDetails
+                        firstPartyClaims={dataToUse.firstPartyClaims}
+                        thirdPartyClaims={dataToUse.thirdPartyClaims}
+                        clients={dataToUse.clients}
+                        defendants={caseDetail.defendants}
+                        casefileId={id}
+                        onUpdate={loadData}
+                    />
+                ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
+            case 'clients':
+                return dataToUse ? (
+                    <ClientList
+                        clients={dataToUse.clients}
+                        medicalBills={dataToUse.medicalBills}
+                        casefileId={id}
+                        onUpdate={loadData}
+                    />
+                ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
+            case 'defendant':
+                return (
+                    <DefendantList
+                        defendants={caseDetail.defendants}
+                        casefileId={id}
+                    />
+                );
+            case 'work log':
+            case 'case notes':
+                return dataToUse ? (
+                    <WorkLogList logs={dataToUse.workLogs} casefileId={id} onUpdate={loadData} />
+                ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
+            case 'documents':
+                return dataToUse ? (
+                    <DocumentList documents={dataToUse.documents} casefileId={id} onUpdate={loadData} />
+                ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
+            default:
+                return <CaseOverview caseDetail={caseDetail} casefileId={id} onUpdate={loadData} />;
+        }
+    };
 
     if (loading) {
         return (
@@ -353,69 +415,24 @@ function CaseDetailsContent({
         return <div className="p-8 text-center text-red-500">Case not found.</div>;
     }
 
-    let content;
-    switch (activeTab) {
-        case 'medical':
-            content = medicalData ? (
-                <MedicalDetails
-                    medicalBills={medicalData.medicalBills}
-                    clients={medicalData.clients}
-                    healthClaim={medicalData.healthClaim}
-                    casefileId={parseInt(id)}
-                />
-            ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
-            break;
-        case 'accident':
-            content = <AccidentDetails caseDetail={caseDetail} />;
-            break;
-        case 'insurance':
-            content = medicalData ? (
-                <InsuranceDetails
-                    firstPartyClaims={medicalData.firstPartyClaims}
-                    thirdPartyClaims={medicalData.thirdPartyClaims}
-                    clients={medicalData.clients}
-                    defendants={caseDetail.defendants} // Pass caseDetail defendants for consistent view-model usage, or use medicalData.defendants if needed for raw fields
-                />
-            ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
-            break;
-        case 'clients':
-            content = medicalData ? (
-                <ClientList
-                    clients={medicalData.clients}
-                    medicalBills={medicalData.medicalBills}
-                />
-            ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
-            break;
-        case 'defendant':
-            content = caseDetail ? (
-                <DefendantList
-                    defendants={caseDetail.defendants}
-                    casefileId={id}
-                />
-            ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
-            break;
-        case 'work log':
-        case 'case notes':
-            content = medicalData ? (
-                <WorkLogList logs={medicalData.workLogs} />
-            ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
-            break;
-        case 'documents':
-            content = medicalData ? (
-                <DocumentList documents={medicalData.documents} />
-            ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
-            break;
-        default:
-            content = <CaseOverview caseDetail={caseDetail} />;
-    }
-
     return (
         <div className="bg-muted/10 min-h-screen">
             <Header pageName="Cases" />
             <div className="p-6 max-w-[1600px] mx-auto">
                 <CaseHeader caseDetail={caseDetail} />
-                <CaseTabs />
-                {content}
+                <CaseTabs isLoading={isTabTransitioning} />
+                <TabTransition>
+                    <div
+                        className={`transition-all duration-300 ease-out ${
+                            isTabTransitioning
+                                ? 'opacity-60 scale-[0.99]'
+                                : 'opacity-100 scale-100'
+                        }`}
+                        key={activeTab}
+                    >
+                        {renderContent()}
+                    </div>
+                </TabTransition>
             </div>
         </div>
     );
