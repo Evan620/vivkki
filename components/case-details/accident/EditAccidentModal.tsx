@@ -5,19 +5,19 @@ import { X, Save, Car, MapPin, Shield, FileText } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 interface AccidentDetails {
-    timeOfWreck: string | null;
-    wreckType: string | null;
-    wreckStreet: string | null;
-    wreckCity: string | null;
-    wreckCounty: string | null;
-    wreckState: string | null;
-    isPoliceInvolved: boolean | null;
-    policeForce: string | null;
-    isPoliceReport: boolean | null;
-    policeReportNumber: string | null;
-    vehicleDescription: string | null;
-    damageLevel: string | null;
-    wreckDescription: string | null;
+    timeOfWreck?: string;
+    wreckType?: string;
+    wreckStreet?: string;
+    wreckCity?: string;
+    wreckCounty?: string;
+    wreckState?: string;
+    isPoliceInvolved?: boolean;
+    policeForce?: string;
+    isPoliceReport?: boolean;
+    policeReportNumber?: string;
+    vehicleDescription?: string;
+    damageLevel?: string;
+    wreckDescription?: string;
 }
 
 interface EditAccidentModalProps {
