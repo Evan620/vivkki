@@ -33,8 +33,6 @@ export function ThirdPartyClaimModal({
         policy_limits: 0,
         demand_amount: 0,
         offer_amount: 0,
-        lor_sent: false,
-        loa_received: false,
         last_request_date: ""
     });
 
@@ -53,8 +51,6 @@ export function ThirdPartyClaimModal({
                     policy_limits: claim.policy_limits || 0,
                     demand_amount: claim.demand_amount || 0,
                     offer_amount: claim.offer_amount || 0,
-                    lor_sent: claim.lor_sent || false,
-                    loa_received: claim.loa_received || false,
                     last_request_date: claim.last_request_date || ""
                 });
             } else {
@@ -65,8 +61,6 @@ export function ThirdPartyClaimModal({
                     policy_limits: 0,
                     demand_amount: 0,
                     offer_amount: 0,
-                    lor_sent: false,
-                    loa_received: false,
                     last_request_date: ""
                 });
             }
@@ -86,8 +80,6 @@ export function ThirdPartyClaimModal({
                 policy_limits: formData.policy_limits || 0,
                 demand_amount: formData.demand_amount || 0,
                 offer_amount: formData.offer_amount || 0,
-                lor_sent: formData.lor_sent,
-                loa_received: formData.loa_received,
                 last_request_date: formData.last_request_date || null
             };
 
@@ -216,30 +208,10 @@ export function ThirdPartyClaimModal({
                         </div>
                     </div>
 
-                    {/* LOR/LOA Tracking */}
+                    {/* Last Request Date */}
                     <div className="bg-muted/50 rounded-lg p-4">
                         <h4 className="font-bold text-sm mb-4">Document Tracking</h4>
-                        <div className="grid grid-cols-2 gap-4">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.lor_sent}
-                                    onChange={e => setFormData({ ...formData, lor_sent: e.target.checked })}
-                                    className="rounded border-border text-primary focus:ring-primary"
-                                />
-                                <span className="text-sm font-medium text-foreground">LOR Sent</span>
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.loa_received}
-                                    onChange={e => setFormData({ ...formData, loa_received: e.target.checked })}
-                                    className="rounded border-border text-primary focus:ring-primary"
-                                />
-                                <span className="text-sm font-medium text-foreground">LOA Received</span>
-                            </label>
-                        </div>
-                        <div className="mt-4">
+                        <div>
                             <label className="block text-sm font-medium text-foreground mb-2">Last Request Date</label>
                             <input
                                 type="date"
