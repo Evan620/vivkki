@@ -6,21 +6,23 @@ import { supabase } from "@/lib/supabaseClient";
 
 interface Document {
     id: number;
-    title: string;
-    file_path: string;
+    file_name: string;
+    file_url: string;
     storage_path: string;
     created_at: string;
     description?: string;
-    type?: string;
+    file_type?: string;
+    file_size?: number;
 }
 
 interface DocumentListProps {
     documents: Document[];
     casefileId: string;
     onUpdate?: () => void;
+    onDocumentsChange?: (documents: Document[]) => void;
 }
 
-export function DocumentList({ documents, casefileId, onUpdate }: DocumentListProps) {
+export function DocumentList({ documents, casefileId, onUpdate, onDocumentsChange }: DocumentListProps) {
     const [uploading, setUploading] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -33,7 +35,7 @@ export function DocumentList({ documents, casefileId, onUpdate }: DocumentListPr
         try {
             const { data, error } = await supabase.storage
                 .from('case-documents')
-                .createSignedUrl(doc.storage_path || doc.file_path, 60);
+                .createSignedUrl(doc.storage_path || doc.file_url, 60);
 
             if (error) throw error;
 
@@ -47,7 +49,7 @@ export function DocumentList({ documents, casefileId, onUpdate }: DocumentListPr
 
     const handleExternalLink = (doc: Document) => {
         // Copy the storage path or open in new tab
-        const url = `${window.location.origin}/storage/documents/${doc.storage_path || doc.file_path}`;
+        const url = `${window.location.origin}/storage/documents/${doc.storage_path || doc.file_url}`;
         window.open(url, '_blank');
     };
 
@@ -74,14 +76,25 @@ export function DocumentList({ documents, casefileId, onUpdate }: DocumentListPr
                 .from('documents')
                 .insert([{
                     casefile_id: parseInt(casefileId),
-                    title: file.name,
-                    file_path: filePath,
+                    file_name: file.name,
+                    file_url: filePath,
                     storage_path: filePath,
-                    type: fileExt,
-                    description: null
+                    file_type: fileExt || 'unknown',
+                    file_size: file.size,
                 }]);
 
             if (dbError) throw dbError;
+
+            // Fetch updated documents list for real-time update
+            const { data: updatedDocs } = await supabase
+                .from('documents')
+                .select('*')
+                .eq('casefile_id', parseInt(casefileId))
+                .order('created_at', { ascending: false });
+
+            if (updatedDocs && onDocumentsChange) {
+                onDocumentsChange(updatedDocs);
+            }
 
             handleShowToast('Document uploaded successfully', 'success');
             if (onUpdate) onUpdate();
@@ -102,7 +115,7 @@ export function DocumentList({ documents, casefileId, onUpdate }: DocumentListPr
             // Delete from storage
             const { error: storageError } = await supabase.storage
                 .from('case-documents')
-                .remove([doc.storage_path || doc.file_path]);
+                .remove([doc.storage_path || doc.file_url]);
 
             if (storageError) console.warn('Storage deletion warning:', storageError);
 
@@ -168,9 +181,9 @@ export function DocumentList({ documents, casefileId, onUpdate }: DocumentListPr
                                         <FileText className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <h3 className="font-medium text-sm group-hover:text-primary transition-colors">{doc.title}</h3>
+                                        <h3 className="font-medium text-sm group-hover:text-primary transition-colors">{doc.file_name}</h3>
                                         <p className="text-xs text-muted-foreground">
-                                            {new Date(doc.created_at).toLocaleDateString()} • {doc.type || 'Document'}
+                                            {new Date(doc.created_at).toLocaleDateString()} • {doc.file_type || 'Document'}
                                         </p>
                                         {doc.description && <p className="text-xs text-muted-foreground mt-0.5">{doc.description}</p>}
                                     </div>

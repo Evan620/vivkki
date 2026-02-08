@@ -339,6 +339,10 @@ function CaseDetailsContent({
         }
     };
 
+    const handleDocumentsChange = (documents: any[]) => {
+        setMedicalData((prev: any) => ({ ...prev, documents }));
+    };
+
     useEffect(() => {
         loadData();
     }, [id, activeTab]);
@@ -396,7 +400,12 @@ function CaseDetailsContent({
                 ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
             case 'documents':
                 return dataToUse ? (
-                    <DocumentList documents={dataToUse.documents} casefileId={id} onUpdate={loadData} />
+                    <DocumentList
+                        documents={dataToUse.documents}
+                        casefileId={id}
+                        onUpdate={loadData}
+                        onDocumentsChange={handleDocumentsChange}
+                    />
                 ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
             default:
                 return <CaseOverview caseDetail={caseDetail} casefileId={id} onUpdate={loadData} />;
