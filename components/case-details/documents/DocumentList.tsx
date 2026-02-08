@@ -32,7 +32,7 @@ export function DocumentList({ documents, casefileId, onUpdate }: DocumentListPr
     const handleDownload = async (doc: Document) => {
         try {
             const { data, error } = await supabase.storage
-                .from('documents')
+                .from('case-documents')
                 .createSignedUrl(doc.storage_path || doc.file_path, 60);
 
             if (error) throw error;
@@ -64,7 +64,7 @@ export function DocumentList({ documents, casefileId, onUpdate }: DocumentListPr
 
             // Upload file to Supabase Storage
             const { error: uploadError } = await supabase.storage
-                .from('documents')
+                .from('case-documents')
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
@@ -101,7 +101,7 @@ export function DocumentList({ documents, casefileId, onUpdate }: DocumentListPr
         try {
             // Delete from storage
             const { error: storageError } = await supabase.storage
-                .from('documents')
+                .from('case-documents')
                 .remove([doc.storage_path || doc.file_path]);
 
             if (storageError) console.warn('Storage deletion warning:', storageError);
