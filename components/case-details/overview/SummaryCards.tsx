@@ -33,8 +33,8 @@ export function SummaryCards({ caseDetail }: SummaryCardsProps) {
                 <div className="text-2xl font-bold text-foreground mb-1">
                     {caseDetail.defendants.length}
                 </div>
-                <div className="text-sm text-foreground truncate" title={`${caseDetail.defendants[0].liability_percentage}% liability`}>
-                    {caseDetail.defendants[0].liability_percentage}% liability
+                <div className="text-sm text-foreground truncate" title={caseDetail.defendants[0]?.liability_percentage ? `${caseDetail.defendants[0].liability_percentage}% liability` : 'No liability info'}>
+                    {caseDetail.defendants[0]?.liability_percentage ?? 'N/A'}% liability
                 </div>
             </div>
 

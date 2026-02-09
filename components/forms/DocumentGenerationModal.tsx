@@ -172,21 +172,21 @@ export default function DocumentGenerationModal({
       // Fetch first party claim
       const { data: firstPartyClaim } = await supabase
         .from('first_party_claims')
-        .select('*, auto_insurance:auto_insurance(*), auto_adjusters(*)')
+        .select('*, auto_insurance:auto_insurance_id(*), auto_adjusters(*)')
         .eq('casefile_id', casefileId)
         .maybeSingle();
 
       // Fetch health claim
       const { data: healthClaim } = selectedClient ? await supabase
         .from('health_claims')
-        .select('*, health_insurance:health_insurance(*), health_adjusters(*)')
+        .select('*, health_insurance:health_insurance_id(*), health_adjusters(*)')
         .eq('client_id', selectedClient.id)
         .maybeSingle() : { data: null };
 
       // Fetch third party claim
       const { data: thirdPartyClaim } = selectedDefendant ? await supabase
         .from('third_party_claims')
-        .select('*, auto_insurance:auto_insurance(*), auto_adjusters(*)')
+        .select('*, auto_insurance:auto_insurance_id(*), auto_adjusters(*)')
         .eq('defendant_id', selectedDefendant.id)
         .maybeSingle() : { data: null };
 
