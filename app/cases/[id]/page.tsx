@@ -26,7 +26,10 @@ async function fetchCaseDetail(id: string): Promise<CaseDetail | null> {
             clients (*),
             defendants (
                 *,
-                third_party_claims (*)
+                third_party_claims (
+                    *,
+                    auto_adjusters (*)
+                )
             ),
             work_logs (*),
             settlements (*)
@@ -98,6 +101,14 @@ async function fetchCaseDetail(id: string): Promise<CaseDetail | null> {
             const thirdPartyClaims = d.third_party_claims || [];
             // Assuming simplified model where info is on the claim directly
             const primaryClaim = thirdPartyClaims[0] || null;
+            
+            // Collect all adjusters from all third party claims for this defendant
+            const allAdjusters: any[] = [];
+            thirdPartyClaims.forEach((claim: any) => {
+                if (claim.auto_adjusters && Array.isArray(claim.auto_adjusters)) {
+                    allAdjusters.push(...claim.auto_adjusters);
+                }
+            });
 
             return {
                 id: String(d.id),
@@ -124,11 +135,14 @@ async function fetchCaseDetail(id: string): Promise<CaseDetail | null> {
                 policy_number: primaryClaim?.policy_number,
                 claim_number: primaryClaim?.claim_number,
 
-                // Adjuster from claim fields
+                // Adjuster from claim fields (legacy fields)
                 adjuster_name: primaryClaim?.adjuster_name,
                 adjuster_email: primaryClaim?.adjuster_email,
                 adjuster_phone: primaryClaim?.adjuster_phone,
                 adjuster_fax: primaryClaim?.adjuster_fax,
+                
+                // Auto adjusters from third party claims
+                auto_adjusters: allAdjusters.length > 0 ? allAdjusters : undefined,
 
                 third_party_claim: primaryClaim ? {
                     id: primaryClaim.id,
@@ -191,6 +205,22 @@ async function fetchMedicalData(caseId: string) {
         .in('client_id', clientIds);
 
     const healthClaim = healthClaims?.[0] || null;
+    
+    // Fetch ALL health adjusters for the health insurance company, not just one
+    if (healthClaim && healthClaim.health_insurance?.id) {
+        const { data: adjusters, error: adjusterError } = await supabase
+            .from('health_adjusters')
+            .select('*')
+            .eq('health_insurance_id', healthClaim.health_insurance.id);
+        
+        if (!adjusterError && adjusters) {
+            healthClaim.health_adjusters = adjusters;
+        } else {
+            healthClaim.health_adjusters = [];
+        }
+    } else if (healthClaim) {
+        healthClaim.health_adjusters = [];
+    }
 
     return {
         medicalBills: bills || [],
@@ -232,14 +262,49 @@ async function fetchInsuranceData(caseId: string) {
                 console.error('Error fetching first party claims:', error);
             }
             firstPartyClaims = data || [];
+            
+            // Fetch adjusters for first party claims (linked via auto_insurance_id)
+            if (firstPartyClaims.length > 0) {
+                const insuranceIds = firstPartyClaims
+                    .map(c => c.auto_insurance_id)
+                    .filter(id => id != null);
+                
+                if (insuranceIds.length > 0) {
+                    const { data: adjusters, error: adjusterError } = await supabase
+                        .from('auto_adjusters')
+                        .select('*')
+                        .in('auto_insurance_id', insuranceIds);
+                    
+                    if (adjusterError) {
+                        console.error('Error fetching auto adjusters for first party:', adjusterError);
+                    } else if (adjusters) {
+                        // Group adjusters by insurance_id and attach to claims
+                        const adjustersByInsurance = new Map();
+                        adjusters.forEach(adj => {
+                            if (adj.auto_insurance_id) {
+                                const key = adj.auto_insurance_id;
+                                if (!adjustersByInsurance.has(key)) {
+                                    adjustersByInsurance.set(key, []);
+                                }
+                                adjustersByInsurance.get(key).push(adj);
+                            }
+                        });
+                        
+                        firstPartyClaims = firstPartyClaims.map(claim => ({
+                            ...claim,
+                            auto_adjusters: adjustersByInsurance.get(claim.auto_insurance_id) || []
+                        }));
+                    }
+                }
+            }
         }
 
-        // 3. Fetch Third Party Claims
+        // 3. Fetch Third Party Claims with auto adjusters
         let thirdPartyClaims: any[] = [];
         if (defendantIds.length > 0) {
             const { data, error } = await supabase
                 .from('third_party_claims')
-                .select('*, auto_insurance(name)')
+                .select('*, auto_insurance(name), auto_adjusters(*)')
                 .in('defendant_id', defendantIds);
             if (error) {
                 console.error('Error fetching third party claims:', error);
@@ -322,7 +387,7 @@ function CaseDetailsContent({
                     // Reuse fetchInsuranceData for clients/defendants as it returns them
                     const insuranceData = await fetchInsuranceData(id);
                     if (isMounted) setMedicalData(insuranceData);
-                } else if (activeTab === 'work log') {
+                } else if (activeTab === 'work log' || activeTab === 'case notes') {
                     const logs = await fetchWorkLogs(id);
                     if (isMounted) setMedicalData({ workLogs: logs });
                 } else if (activeTab === 'documents') {
@@ -406,7 +471,7 @@ function CaseDetailsContent({
             ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
             break;
         default:
-            content = <CaseOverview caseDetail={caseDetail} />;
+            content = <CaseOverview caseDetail={caseDetail} medicalBills={medicalData?.medicalBills} />;
     }
 
     return (

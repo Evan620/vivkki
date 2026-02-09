@@ -4,10 +4,16 @@ import { FileText, Download, ExternalLink } from "lucide-react";
 
 interface Document {
     id: number;
-    title: string;
-    file_path: string;
-    created_at: string;
+    file_name?: string;
+    title?: string;
+    file_path?: string;
+    file_url?: string;
+    storage_path?: string;
+    created_at?: string;
+    uploaded_at?: string;
     description?: string;
+    notes?: string;
+    category?: string;
     type?: string;
 }
 
@@ -44,20 +50,43 @@ export function DocumentList({ documents }: DocumentListProps) {
                                     <FileText className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h3 className="font-medium text-sm group-hover:text-primary transition-colors">{doc.title}</h3>
+                                    <h3 className="font-medium text-sm group-hover:text-primary transition-colors">
+                                        {doc.title || doc.file_name || 'Document'}
+                                    </h3>
                                     <p className="text-xs text-muted-foreground">
-                                        {new Date(doc.created_at).toLocaleDateString()} • {doc.type || 'Document'}
+                                        {doc.created_at || doc.uploaded_at 
+                                            ? new Date(doc.created_at || doc.uploaded_at).toLocaleDateString() 
+                                            : 'Unknown date'} • {doc.category || doc.type || 'Document'}
                                     </p>
-                                    {doc.description && <p className="text-xs text-muted-foreground mt-0.5">{doc.description}</p>}
+                                    {(doc.description || doc.notes) && (
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                            {doc.description || doc.notes}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
-                                    <Download className="w-4 h-4" />
-                                </button>
-                                <button className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors">
-                                    <ExternalLink className="w-4 h-4" />
-                                </button>
+                                {doc.file_url && (
+                                    <>
+                                        <a
+                                            href={doc.file_url}
+                                            download={doc.file_name || 'document.pdf'}
+                                            className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+                                            title="Download"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                        </a>
+                                        <a
+                                            href={doc.file_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+                                            title="Open in new tab"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                        </a>
+                                    </>
+                                )}
                             </div>
                         </div>
                     ))}
