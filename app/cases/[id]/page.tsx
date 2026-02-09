@@ -431,7 +431,7 @@ function CaseDetailsContent({
             ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
             break;
         case 'accident':
-            content = <AccidentDetails caseDetail={caseDetail} />;
+            content = <AccidentDetails caseDetail={caseDetail} casefileId={id} />;
             break;
         case 'insurance':
             content = medicalData ? (
@@ -471,7 +471,7 @@ function CaseDetailsContent({
             ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
             break;
         default:
-            content = <CaseOverview caseDetail={caseDetail} medicalBills={medicalData?.medicalBills} />;
+            content = <CaseOverview caseDetail={caseDetail} medicalBills={medicalData?.medicalBills} casefileId={id} />;
     }
 
     return (
