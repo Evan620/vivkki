@@ -8,6 +8,7 @@ import {
 import { supabase } from "@/lib/supabaseClient";
 import { EditDefendantModal } from "./EditDefendantModal";
 import { useRouter } from "next/navigation";
+import AdjusterModal from "@/components/forms/AdjusterModal";
 
 interface DefendantListProps {
     defendants: any[];
@@ -19,6 +20,9 @@ export function DefendantList({ defendants, casefileId }: DefendantListProps) {
     const [expandedIds, setExpandedIds] = useState<number[]>([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedDefendant, setSelectedDefendant] = useState<any | null>(null);
+    const [isAdjusterModalOpen, setIsAdjusterModalOpen] = useState(false);
+    const [editingAdjuster, setEditingAdjuster] = useState<any | null>(null);
+    const [currentDefendant, setCurrentDefendant] = useState<any | null>(null);
 
     const effectiveCasefileId = casefileId || defendants[0]?.casefile_id;
 
@@ -51,6 +55,86 @@ export function DefendantList({ defendants, casefileId }: DefendantListProps) {
             handleUpdate();
         } catch (error) {
             console.error("Error deleting defendant", error);
+        }
+    };
+
+    const handleAddAdjuster = (defendant: any) => {
+        setEditingAdjuster(null);
+        setCurrentDefendant(defendant);
+        setIsAdjusterModalOpen(true);
+    };
+
+    const handleEditAdjuster = (adjuster: any, defendant: any) => {
+        setEditingAdjuster(adjuster);
+        setCurrentDefendant(defendant);
+        setIsAdjusterModalOpen(true);
+    };
+
+    const handleDeleteAdjuster = async (adjusterId: number) => {
+        if (!confirm('Are you sure you want to delete this adjuster?')) return;
+
+        try {
+            const { error } = await supabase
+                .from('auto_adjusters')
+                .delete()
+                .eq('id', adjusterId);
+
+            if (error) throw error;
+            router.refresh();
+        } catch (error: any) {
+            console.error('Error deleting adjuster:', error);
+            alert('Failed to delete adjuster: ' + (error.message || 'Unknown error'));
+        }
+    };
+
+    const handleAdjusterSubmit = async (adjusterData: any) => {
+        if (!currentDefendant) return;
+
+        // Find the third party claim for this defendant
+        // We need to fetch it or get it from the defendant data
+        try {
+            // First, get the third party claim for this defendant
+            const { data: thirdPartyClaim, error: claimError } = await supabase
+                .from('third_party_claims')
+                .select('id, auto_insurance_id')
+                .eq('defendant_id', parseInt(currentDefendant.id))
+                .single();
+
+            if (claimError && claimError.code !== 'PGRST116') { // PGRST116 = no rows returned
+                throw claimError;
+            }
+
+            if (editingAdjuster) {
+                // Update existing adjuster
+                const { error } = await supabase
+                    .from('auto_adjusters')
+                    .update(adjusterData)
+                    .eq('id', editingAdjuster.id);
+
+                if (error) throw error;
+            } else {
+                // Create new adjuster
+                const adjusterPayload: any = {
+                    ...adjusterData,
+                };
+
+                if (thirdPartyClaim) {
+                    adjusterPayload.third_party_claim_id = thirdPartyClaim.id;
+                    adjusterPayload.auto_insurance_id = thirdPartyClaim.auto_insurance_id;
+                } else if (currentDefendant.auto_insurance_id) {
+                    adjusterPayload.auto_insurance_id = currentDefendant.auto_insurance_id;
+                }
+
+                const { error } = await supabase
+                    .from('auto_adjusters')
+                    .insert([adjusterPayload]);
+
+                if (error) throw error;
+            }
+            router.refresh();
+        } catch (error: any) {
+            console.error('Error saving adjuster:', error);
+            throw error;
         }
     };
 
@@ -249,16 +333,41 @@ export function DefendantList({ defendants, casefileId }: DefendantListProps) {
                                 </div>
 
                                 {/* Adjusters */}
-                                {defendant.auto_adjusters && defendant.auto_adjusters.length > 0 && (
-                                    <div>
-                                        <h4 className="text-md font-semibold text-foreground mb-4 flex items-center gap-2">
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-md font-semibold text-foreground flex items-center gap-2">
                                             <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
                                             Adjuster Information
                                         </h4>
+                                        <button
+                                            onClick={() => handleAddAdjuster(defendant)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
+                                        >
+                                            <Plus className="w-3 h-3" />
+                                            Add Adjuster
+                                        </button>
+                                    </div>
+                                    {defendant.auto_adjusters && defendant.auto_adjusters.length > 0 ? (
                                         <div className="space-y-4">
                                             {defendant.auto_adjusters.map((adjuster: any) => (
-                                                <div key={adjuster.id} className="p-4 bg-muted/40 rounded-lg border border-border/50">
-                                                    <div className="flex items-start justify-between mb-3">
+                                                <div key={adjuster.id} className="p-4 bg-muted/40 rounded-lg border border-border/50 relative group">
+                                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => handleEditAdjuster(adjuster, defendant)}
+                                                            className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                                            title="Edit adjuster"
+                                                        >
+                                                            <Edit2 className="w-3 h-3" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteAdjuster(adjuster.id)}
+                                                            className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                                                            title="Delete adjuster"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex items-start justify-between mb-3 pr-20">
                                                         <h5 className="text-sm font-semibold text-foreground">{adjuster.first_name} {adjuster.last_name}</h5>
                                                     </div>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -274,12 +383,28 @@ export function DefendantList({ defendants, casefileId }: DefendantListProps) {
                                                                 <p className="text-sm font-medium text-foreground">{adjuster.phone}</p>
                                                             </div>
                                                         )}
+                                                        {adjuster.fax && (
+                                                            <div>
+                                                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Fax</p>
+                                                                <p className="text-sm font-medium text-foreground">{adjuster.fax}</p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                )}
+                                    ) : (
+                                        <div className="p-4 bg-muted/20 rounded-lg border border-border/50 text-center">
+                                            <p className="text-sm text-muted-foreground mb-2">No adjusters assigned</p>
+                                            <button
+                                                onClick={() => handleAddAdjuster(defendant)}
+                                                className="text-xs text-primary hover:text-primary/80 font-medium"
+                                            >
+                                                Add your first adjuster
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -294,6 +419,17 @@ export function DefendantList({ defendants, casefileId }: DefendantListProps) {
                 defendant={selectedDefendant}
                 casefileId={effectiveCasefileId}
                 onUpdate={handleUpdate}
+            />
+
+            <AdjusterModal
+                isOpen={isAdjusterModalOpen}
+                onClose={() => {
+                    setIsAdjusterModalOpen(false);
+                    setEditingAdjuster(null);
+                    setCurrentDefendant(null);
+                }}
+                onSubmit={handleAdjusterSubmit}
+                initialData={editingAdjuster}
             />
         </div>
     );
