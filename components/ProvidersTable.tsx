@@ -263,7 +263,6 @@ export function ProvidersTable({ initialProviders }: ProvidersTableProps) {
                                 city: city || null,
                                 state: additionalData?.state || 'OK',
                                 zip_code: additionalData?.zipCode || null,
-                                phone: additionalData?.phones?.[0]?.number || '',
                                 phone_1_type: additionalData?.phones?.[0]?.type || null,
                                 phone_1: additionalData?.phones?.[0]?.number || null,
                                 phone_2_type: additionalData?.phones?.[1]?.type || null,

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, Plus, MoreHorizontal, Phone, Eye, Trash2 } from "lucide-react";
+import { Search, Plus, MoreHorizontal, Phone, Eye, Trash2, Edit } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import AddHealthInsuranceModal from "./forms/AddHealthInsuranceModal";
 
@@ -174,6 +174,17 @@ export function HealthInsuranceTable({ initialInsurance }: HealthInsuranceTableP
                                                         >
                                                             <Eye className="w-4 h-4" />
                                                             View Details
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                router.push(`/health-insurance/${i.id}?edit=true`);
+                                                                setOpenActionMenu(null);
+                                                            }}
+                                                            className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-foreground"
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                            Edit
                                                         </button>
                                                         <button
                                                             onClick={(e) => {

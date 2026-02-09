@@ -8,6 +8,9 @@ interface PageProps {
     params: Promise<{
         id: string;
     }>;
+    searchParams: Promise<{
+        edit?: string;
+    }>;
 }
 
 // Revalidate data every minute
@@ -43,8 +46,9 @@ async function getAdjusters(insuranceId: string) {
     return data;
 }
 
-export default async function AutoInsuranceDetailsPage({ params }: PageProps) {
+export default async function AutoInsuranceDetailsPage({ params, searchParams }: PageProps) {
     const { id } = await params;
+    const { edit } = await searchParams;
     const insurance = await getAutoInsurance(id);
 
     if (!insurance) {
@@ -57,7 +61,11 @@ export default async function AutoInsuranceDetailsPage({ params }: PageProps) {
         <>
             <Header pageName="Provider Details" />
             <div className="p-6 max-w-[1600px] mx-auto">
-                <AutoInsuranceDetails initialData={insurance} initialAdjusters={adjusters} />
+                <AutoInsuranceDetails
+                    initialData={insurance}
+                    initialAdjusters={adjusters}
+                    initialEditMode={edit === 'true'}
+                />
             </div>
         </>
     );

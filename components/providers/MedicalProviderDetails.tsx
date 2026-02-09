@@ -80,11 +80,6 @@ export default function MedicalProviderDetails({ initialProvider }: MedicalProvi
                 notes: formData.notes?.trim() || null
             };
 
-            // Legacy backward compatibility updates
-            if (formData.phone_1?.trim()) updateData.phone = formData.phone_1.trim();
-            if (formData.fax_1?.trim()) updateData.fax = formData.fax_1.trim();
-            if (formData.email_1?.trim()) updateData.email = formData.email_1.trim();
-
             const { data, error } = await supabase
                 .from('medical_providers')
                 .update(updateData)

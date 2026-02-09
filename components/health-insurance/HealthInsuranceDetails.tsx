@@ -12,13 +12,14 @@ import AdjusterModal from "@/components/forms/AdjusterModal";
 interface HealthInsuranceDetailsProps {
     initialData: any;
     initialAdjusters: any[];
+    initialEditMode?: boolean;
 }
 
-export default function HealthInsuranceDetails({ initialData, initialAdjusters }: HealthInsuranceDetailsProps) {
+export default function HealthInsuranceDetails({ initialData, initialAdjusters, initialEditMode = false }: HealthInsuranceDetailsProps) {
     const router = useRouter();
     const [insurance, setInsurance] = useState(initialData);
     const [adjusters, setAdjusters] = useState(initialAdjusters);
-    const [isEditing, setIsEditing] = useState(false);
+    const [isEditing, setIsEditing] = useState(initialEditMode);
     const [saving, setSaving] = useState(false);
 
     // Filter logic states
