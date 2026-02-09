@@ -439,7 +439,8 @@ function CaseDetailsContent({
                     firstPartyClaims={medicalData.firstPartyClaims}
                     thirdPartyClaims={medicalData.thirdPartyClaims}
                     clients={medicalData.clients}
-                    defendants={caseDetail.defendants} // Pass caseDetail defendants for consistent view-model usage, or use medicalData.defendants if needed for raw fields
+                    defendants={caseDetail.defendants}
+                    casefileId={id}
                 />
             ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
             break;
@@ -448,6 +449,7 @@ function CaseDetailsContent({
                 <ClientList
                     clients={medicalData.clients}
                     medicalBills={medicalData.medicalBills}
+                    casefileId={id}
                 />
             ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
             break;
@@ -462,7 +464,7 @@ function CaseDetailsContent({
         case 'work log':
         case 'case notes':
             content = medicalData ? (
-                <WorkLogList logs={medicalData.workLogs} />
+                <WorkLogList logs={medicalData.workLogs} casefileId={id} />
             ) : <Loader2 className="h-8 w-8 animate-spin mx-auto my-8" />;
             break;
         case 'documents':

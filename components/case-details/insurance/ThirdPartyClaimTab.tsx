@@ -22,11 +22,15 @@ interface Defendant {
 interface ThirdPartyClaimTabProps {
     thirdPartyClaims: ThirdPartyClaim[];
     defendants: Defendant[];
+    casefileId?: string;
+    onUpdate?: () => void;
 }
 
 export function ThirdPartyClaimTab({
     thirdPartyClaims = [],
-    defendants = []
+    defendants = [],
+    casefileId,
+    onUpdate
 }: ThirdPartyClaimTabProps) {
     const router = useRouter();
     const [isAdjusterModalOpen, setIsAdjusterModalOpen] = useState(false);

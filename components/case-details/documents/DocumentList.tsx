@@ -54,8 +54,8 @@ export function DocumentList({ documents }: DocumentListProps) {
                                         {doc.title || doc.file_name || 'Document'}
                                     </h3>
                                     <p className="text-xs text-muted-foreground">
-                                        {doc.created_at || doc.uploaded_at 
-                                            ? new Date(doc.created_at || doc.uploaded_at).toLocaleDateString() 
+                                        {doc.created_at || doc.uploaded_at
+                                            ? new Date((doc.created_at || doc.uploaded_at)!).toLocaleDateString()
                                             : 'Unknown date'} • {doc.category || doc.type || 'Document'}
                                     </p>
                                     {(doc.description || doc.notes) && (

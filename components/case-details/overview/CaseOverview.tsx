@@ -29,10 +29,10 @@ export function CaseOverview({ caseDetail, medicalBills = [], casefileId, onUpda
 
     const defendants = caseDetail.defendants?.map(d => ({
         id: parseInt(d.id),
-        first_name: d.name?.split(' ')[0] || '',
-        last_name: d.name?.split(' ').slice(1).join(' ') || '',
-        firstName: d.name?.split(' ')[0] || '',
-        lastName: d.name?.split(' ').slice(1).join(' ') || '',
+        first_name: d.first_name || '',
+        last_name: d.last_name || '',
+        firstName: d.first_name || '',
+        lastName: d.last_name || '',
     })) || [];
 
     return (

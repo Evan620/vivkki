@@ -11,12 +11,16 @@ import { useRouter } from "next/navigation";
 
 interface FirstPartyClaimTabProps {
     firstPartyClaims: FirstPartyClaim[];
-    clients: Client[]; // Using Client type from types which might be slightly different than legacy 'any' but should map
+    clients: Client[];
+    casefileId?: string;
+    onUpdate?: () => void;
 }
 
 export function FirstPartyClaimTab({
     firstPartyClaims = [],
-    clients = []
+    clients = [],
+    casefileId,
+    onUpdate
 }: FirstPartyClaimTabProps) {
     const router = useRouter();
     const [isAdjusterModalOpen, setIsAdjusterModalOpen] = useState(false);
