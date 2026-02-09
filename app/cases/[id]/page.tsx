@@ -15,9 +15,10 @@ import { DocumentList } from "@/components/case-details/documents/DocumentList";
 import { TabTransition } from "@/components/case-details/TabTransition";
 import { CaseDetail } from "@/types";
 import { supabase } from "@/lib/supabaseClient";
-import { useEffect, useState, use, Suspense } from "react";
+import { useEffect, useState, use, Suspense, useRef } from "react";
 import { notFound, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 async function fetchCaseDetail(id: string): Promise<CaseDetail | null> {
     const { data: caseData, error } = await supabase
@@ -306,6 +307,7 @@ function CaseDetailsContent({
     const [loading, setLoading] = useState(true);
     const [medicalData, setMedicalData] = useState<any>(null);
     const [isTabTransitioning, setIsTabTransitioning] = useState(false);
+    const channelsRef = useRef<RealtimeChannel[]>([]);
 
     const loadData = async (currentTab?: string) => {
         const tabToLoad = currentTab || activeTab;
@@ -342,6 +344,212 @@ function CaseDetailsContent({
     const handleDocumentsChange = (documents: any[]) => {
         setMedicalData((prev: any) => ({ ...prev, documents }));
     };
+
+    // Set up real-time subscriptions for all relevant tables
+    useEffect(() => {
+        const numericId = parseInt(id);
+        const channels: RealtimeChannel[] = [];
+
+        // Helper to create and track a channel
+        const createChannel = (tableName: string, callback: (payload: any) => void, filterColumn = 'casefile_id') => {
+            const channelName = `${tableName}-${id}-realtime`;
+            const config: any = {
+                event: '*',
+                schema: 'public',
+                table: tableName,
+            };
+            // Only add filter if the column exists for this table
+            if (filterColumn) {
+                config.filter = `${filterColumn}=eq.${numericId}`;
+            }
+            const channel = supabase
+                .channel(channelName)
+                .on('postgres_changes', config, callback)
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log(`✅ Realtime subscribed: ${tableName}`);
+                    } else if (status === 'CHANNEL_ERROR') {
+                        console.error(`❌ Realtime error: ${tableName}`);
+                    }
+                });
+            channels.push(channel);
+            return channel;
+        };
+
+        // Async setup function
+        const setupSubscriptions = async () => {
+            // Get current client IDs for medical_bills filtering
+            let currentClientIds: number[] = [];
+            const { data: currentClients } = await supabase
+                .from('clients')
+                .select('id')
+                .eq('casefile_id', numericId);
+            if (currentClients) {
+                currentClientIds = currentClients.map(c => c.id);
+            }
+
+            // Subscribe to casefiles updates (for overview/accident tabs)
+            createChannel('casefiles', async (payload) => {
+                console.log('📢 Casefile updated:', payload.eventType);
+                if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+                    await fetchCaseDetail(id).then(setCaseDetail);
+                }
+            });
+
+            // Subscribe to clients updates (for clients tab)
+            createChannel('clients', async (payload) => {
+                console.log('📢 Client updated:', payload.eventType);
+                // Refresh medical data which includes clients
+                if (medicalData?.clients) {
+                    const updated = await fetchMedicalData(id);
+                    setMedicalData(updated);
+                }
+                // Also refresh case detail for client count/name
+                await fetchCaseDetail(id).then(setCaseDetail);
+            });
+
+            // Subscribe to defendants updates (for defendant tab)
+            createChannel('defendants', async (payload) => {
+                console.log('📢 Defendant updated:', payload.eventType);
+                await fetchCaseDetail(id).then(setCaseDetail);
+                if (medicalData?.defendants) {
+                    const updated = await fetchInsuranceData(id);
+                    setMedicalData(updated);
+                }
+            });
+
+            // Subscribe to medical_bills updates (for medical tab)
+            // Note: medical_bills uses client_id, not casefile_id, so we filter client-side
+            const medicalBillsChannel = supabase
+                .channel(`medical_bills-${id}-realtime`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'medical_bills',
+                    },
+                    async (payload) => {
+                        // Check if this bill belongs to one of our clients
+                        const clientId = (payload.new as any).client_id || (payload.old as any).client_id;
+                        if (clientId && currentClientIds.includes(clientId)) {
+                            console.log('📢 Medical bill updated:', payload.eventType);
+                            if (medicalData?.medicalBills) {
+                                const updated = await fetchMedicalData(id);
+                                setMedicalData(updated);
+                            }
+                        }
+                    }
+                )
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Realtime subscribed: medical_bills');
+                    }
+                });
+            channels.push(medicalBillsChannel);
+
+            // Subscribe to work_logs updates (for work log tab)
+            createChannel('work_logs', async (payload) => {
+                console.log('📢 Work log updated:', payload.eventType);
+                if (medicalData?.workLogs) {
+                    const logs = await fetchWorkLogs(id);
+                    setMedicalData((prev: any) => ({ ...prev, workLogs: logs }));
+                }
+                // Also update case detail for recent activity
+                await fetchCaseDetail(id).then(setCaseDetail);
+            });
+
+            // Subscribe to documents updates (for documents tab)
+            createChannel('documents', async (payload) => {
+                console.log('📢 Document updated:', payload.eventType);
+                if (medicalData?.documents) {
+                    const docs = await fetchDocuments(id);
+                    setMedicalData((prev: any) => ({ ...prev, documents: docs }));
+                }
+            });
+
+            // Subscribe to first_party_claims updates (for insurance tab)
+            // Uses client_id, so filter client-side
+            const firstPartyClaimsChannel = supabase
+                .channel(`first_party_claims-${id}-realtime`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'first_party_claims',
+                    },
+                    async (payload) => {
+                        const clientId = (payload.new as any).client_id || (payload.old as any).client_id;
+                        if (clientId && currentClientIds.includes(clientId)) {
+                            console.log('📢 First party claim updated:', payload.eventType);
+                            if (medicalData?.firstPartyClaims) {
+                                const updated = await fetchInsuranceData(id);
+                                setMedicalData(updated);
+                            }
+                        }
+                    }
+                )
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Realtime subscribed: first_party_claims');
+                    }
+                });
+            channels.push(firstPartyClaimsChannel);
+
+            // Subscribe to third_party_claims updates (for insurance tab)
+            // Uses defendant_id, so filter client-side
+            const thirdPartyClaimsChannel = supabase
+                .channel(`third_party_claims-${id}-realtime`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'third_party_claims',
+                    },
+                    async (payload) => {
+                        // Get current defendant IDs
+                        const { data: currentDefendants } = await supabase
+                            .from('defendants')
+                            .select('id')
+                            .eq('casefile_id', numericId);
+                        const defendantIds = currentDefendants?.map(d => d.id) || [];
+
+                        const defendantId = (payload.new as any).defendant_id || (payload.old as any).defendant_id;
+                        if (defendantId && defendantIds.includes(defendantId)) {
+                            console.log('📢 Third party claim updated:', payload.eventType);
+                            if (medicalData?.thirdPartyClaims) {
+                                const updated = await fetchInsuranceData(id);
+                                setMedicalData(updated);
+                            }
+                        }
+                    }
+                )
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Realtime subscribed: third_party_claims');
+                    }
+                });
+            channels.push(thirdPartyClaimsChannel);
+
+            // Subscribe to settlements updates (for overview tab)
+            createChannel('settlements', async (payload) => {
+                console.log('📢 Settlement updated:', payload.eventType);
+                await fetchCaseDetail(id).then(setCaseDetail);
+            });
+        };
+
+        setupSubscriptions();
+
+        // Cleanup: unsubscribe from all channels
+        return () => {
+            channels.forEach(channel => {
+                supabase.removeChannel(channel);
+            });
+            channelsRef.current = [];
+        };
+    }, [id]); // Only re-run if id changes
 
     useEffect(() => {
         loadData();
@@ -391,6 +599,7 @@ function CaseDetailsContent({
                     <DefendantList
                         defendants={caseDetail.defendants}
                         casefileId={id}
+                        onUpdate={loadData}
                     />
                 );
             case 'work log':
