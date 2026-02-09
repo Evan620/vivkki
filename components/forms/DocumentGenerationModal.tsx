@@ -199,10 +199,10 @@ export default function DocumentGenerationModal({
 
       if (logsError) throw logsError;
 
-      // Fetch first party claim
+      // Fetch first party claim (adjusters are stored directly on the claim)
       const { data: firstPartyClaim } = await supabase
         .from('first_party_claims')
-        .select('*, auto_insurance:auto_insurance_id(*), auto_adjusters(*)')
+        .select('*, auto_insurance:auto_insurance_id(*)')
         .eq('casefile_id', casefileId)
         .maybeSingle();
 
@@ -214,11 +214,28 @@ export default function DocumentGenerationModal({
         .maybeSingle() : { data: null };
 
       // Fetch third party claim
-      const { data: thirdPartyClaim } = selectedDefendant ? await supabase
-        .from('third_party_claims')
-        .select('*, auto_insurance:auto_insurance_id(*), auto_adjusters(*)')
-        .eq('defendant_id', selectedDefendant.id)
-        .maybeSingle() : { data: null };
+      let thirdPartyClaim = null;
+      if (selectedDefendant) {
+        const { data: thirdPartyClaimData } = await supabase
+          .from('third_party_claims')
+          .select('*, auto_insurance:auto_insurance_id(*)')
+          .eq('defendant_id', selectedDefendant.id)
+          .maybeSingle();
+
+        if (thirdPartyClaimData) {
+          // Fetch auto_adjusters separately since it's a reverse relationship
+          const { data: autoAdjusters } = await supabase
+            .from('auto_adjusters')
+            .select('*')
+            .eq('third_party_claim_id', thirdPartyClaimData.id)
+            .eq('is_archived', false);
+
+          thirdPartyClaim = {
+            ...thirdPartyClaimData,
+            auto_adjusters: autoAdjusters || []
+          };
+        }
+      }
 
       const fullCaseData: CaseData = {
         casefile,
