@@ -615,10 +615,22 @@ export async function prepareDocumentPayloadWithMode(
   specificProviderId?: number,
   selectedParty?: 'first' | 'third'
 ): Promise<DocumentPayload> {
+  // For per_client generation, use the target client instead of the default client
+  let updatedCaseData = caseData;
+  if (generationMode === 'per_client' && targetClientId) {
+    const targetClient = clients.find(c => c.id === targetClientId);
+    if (targetClient) {
+      updatedCaseData = {
+        ...caseData,
+        client: targetClient
+      };
+    }
+  }
+
   const basePayload = await prepareDocumentPayload(
     casefileId,
     templateType,
-    caseData,
+    updatedCaseData,
     clients,
     specificProviderId,
     selectedParty
