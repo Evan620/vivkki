@@ -13,9 +13,10 @@ import AdjusterModal from "@/components/forms/AdjusterModal";
 interface DefendantListProps {
     defendants: any[];
     casefileId: string;
+    onUpdate?: () => void;
 }
 
-export function DefendantList({ defendants, casefileId }: DefendantListProps) {
+export function DefendantList({ defendants, casefileId, onUpdate }: DefendantListProps) {
     const router = useRouter();
     const [expandedIds, setExpandedIds] = useState<number[]>([]);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -33,7 +34,7 @@ export function DefendantList({ defendants, casefileId }: DefendantListProps) {
     };
 
     const handleUpdate = () => {
-        router.refresh();
+        if (onUpdate) onUpdate();
     };
 
     const handleAddDefendant = () => {
