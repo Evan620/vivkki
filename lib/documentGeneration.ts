@@ -146,12 +146,13 @@ export async function prepareDocumentPayload(
 
     // Medical Provider Info
     'MedicalProvider::name': relevantProviders?.[0]?.medical_provider?.name || relevantProviders?.[0]?.medical_provider?.provider_name || 'N/A',
-    'MedicalProvider::streetAddress': relevantProviders?.[0]?.medical_provider?.address || relevantProviders?.[0]?.medical_provider?.street_address || 'N/A',
+    'MedicalProvider::streetAddress': relevantProviders?.[0]?.medical_provider?.street_address || 'N/A',
     'MedicalProvider::city': relevantProviders?.[0]?.medical_provider?.city || 'Oklahoma City',
     'MedicalProvider::state': relevantProviders?.[0]?.medical_provider?.state || 'Oklahoma',
-    'MedicalProvider::zip': relevantProviders?.[0]?.medical_provider?.zip || relevantProviders?.[0]?.medical_provider?.zip_code || '73102',
-    'MedicalProvider::phone': relevantProviders?.[0]?.medical_provider?.phone || 'N/A',
-    'MedicalProvider::fax': relevantProviders?.[0]?.medical_provider?.fax || 'N/A',
+    'MedicalProvider::zip': relevantProviders?.[0]?.medical_provider?.zip_code || relevantProviders?.[0]?.medical_provider?.zip || '73102',
+    'MedicalProvider::phone': relevantProviders?.[0]?.medical_provider?.phone_1 || relevantProviders?.[0]?.medical_provider?.phone || 'N/A',
+    'MedicalProvider::fax': relevantProviders?.[0]?.medical_provider?.fax_1 || relevantProviders?.[0]?.medical_provider?.fax || 'N/A',
+    'MedicalProvider::type': relevantProviders?.[0]?.medical_provider?.type || 'N/A',
   };
 
   // Add date helpers
@@ -615,10 +616,22 @@ export async function prepareDocumentPayloadWithMode(
   specificProviderId?: number,
   selectedParty?: 'first' | 'third'
 ): Promise<DocumentPayload> {
+  // For per_client generation, use the target client instead of the default client
+  let updatedCaseData = caseData;
+  if (generationMode === 'per_client' && targetClientId) {
+    const targetClient = clients.find(c => c.id === targetClientId);
+    if (targetClient) {
+      updatedCaseData = {
+        ...caseData,
+        client: targetClient
+      };
+    }
+  }
+
   const basePayload = await prepareDocumentPayload(
     casefileId,
     templateType,
-    caseData,
+    updatedCaseData,
     clients,
     specificProviderId,
     selectedParty

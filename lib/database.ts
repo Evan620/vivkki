@@ -114,27 +114,24 @@ export async function createMedicalProvider(provider: any) {
         city: provider.city || '',
         state: provider.state || 'OK',
         zip_code: provider.zip_code || '',
-        phone: provider.phone || provider.phone_1 || '',
-        fax: provider.fax || provider.fax_1 || '',
-        email: provider.email || provider.email_1 || '',
-        request_method: provider.request_method || 'Email',
-        notes: provider.notes || null,
         phone_1_type: provider.phone_1_type || null,
-        phone_1: provider.phone_1 || null,
+        phone_1: provider.phone_1 || provider.phone || '',
         phone_2_type: provider.phone_2_type || null,
         phone_2: provider.phone_2 || null,
         phone_3_type: provider.phone_3_type || null,
         phone_3: provider.phone_3 || null,
         fax_1_type: provider.fax_1_type || null,
-        fax_1: provider.fax_1 || null,
+        fax_1: provider.fax_1 || provider.fax || '',
         fax_2_type: provider.fax_2_type || null,
         fax_2: provider.fax_2 || null,
         fax_3_type: provider.fax_3_type || null,
         fax_3: provider.fax_3 || null,
         email_1_type: provider.email_1_type || null,
-        email_1: provider.email_1 || null,
+        email_1: provider.email_1 || provider.email || '',
         email_2_type: provider.email_2_type || null,
-        email_2: provider.email_2 || null
+        email_2: provider.email_2 || null,
+        request_method: provider.request_method || 'Email',
+        notes: provider.notes || null
     };
 
     const { data, error } = await supabase

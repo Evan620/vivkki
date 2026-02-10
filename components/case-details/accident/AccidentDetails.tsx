@@ -2,12 +2,28 @@
 
 import { Edit2 } from "lucide-react";
 import { CaseDetail } from "@/types";
+import { useState } from "react";
+import { EditAccidentModal } from "./EditAccidentModal";
 
 interface AccidentDetailsProps {
     caseDetail: CaseDetail;
+    casefileId: string;
+    onUpdate?: () => void;
 }
 
-export function AccidentDetails({ caseDetail }: AccidentDetailsProps) {
+export function AccidentDetails({ caseDetail, casefileId, onUpdate }: AccidentDetailsProps) {
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const handleShowToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleEdit = () => {
+        setIsEditModalOpen(true);
+    };
+
     // Formatting helpers
     const formatDate = (dateStr?: string) => {
         if (!dateStr) return 'N/A';
@@ -18,12 +34,6 @@ export function AccidentDetails({ caseDetail }: AccidentDetailsProps) {
         if (!timeStr) return 'N/A';
         // Simple check if it's already formatted or generic time string
         return timeStr;
-    };
-
-    const handleEdit = () => {
-        // TODO: Implement accident details editing
-        console.log('Edit accident details clicked');
-        alert('Accident details editing feature coming soon!');
     };
 
     return (
@@ -90,6 +100,23 @@ export function AccidentDetails({ caseDetail }: AccidentDetailsProps) {
                     )}
                 </div>
             </div>
+
+            <EditAccidentModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                accidentDetails={caseDetail}
+                casefileId={casefileId}
+                onUpdate={() => { if (onUpdate) onUpdate(); }}
+                onShowToast={handleShowToast}
+            />
+
+            {toast && (
+                <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+                    toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                }`}>
+                    {toast.message}
+                </div>
+            )}
         </div>
     );
 }

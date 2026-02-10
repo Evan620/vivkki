@@ -102,6 +102,7 @@ export interface HealthClaim {
         phone?: string;
         fax?: string;
     };
+    health_adjusters?: any[];
 }
 
 export interface CaseDetail {
@@ -213,11 +214,14 @@ export interface FirstPartyClaim {
     policy_number?: string;
     claim_number?: string;
 
-    // Adjuster
+    // Adjuster (legacy fields)
     adjuster_name?: string;
     adjuster_email?: string;
     adjuster_phone?: string;
     adjuster_fax?: string;
+
+    // Auto adjusters array
+    auto_adjusters?: any[];
 
     // Coverages
     pip_available?: number;
@@ -236,11 +240,14 @@ export interface ThirdPartyClaim {
     policy_number?: string;
     claim_number?: string;
 
-    // Adjuster
+    // Adjuster (legacy fields)
     adjuster_name?: string;
     adjuster_email?: string;
     adjuster_phone?: string;
     adjuster_fax?: string;
+
+    // Auto adjusters array
+    auto_adjusters?: any[];
 
     // Liability
     policy_limits?: number;

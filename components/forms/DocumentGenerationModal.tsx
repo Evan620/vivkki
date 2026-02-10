@@ -89,6 +89,8 @@ export default function DocumentGenerationModal({
   const [generationStatuses, setGenerationStatuses] = useState<GenerationStatus[]>([]);
   const [caseData, setCaseData] = useState<CaseData | null>(null);
   const [loadingData, setLoadingData] = useState(false);
+  const [fullClients, setFullClients] = useState<any[]>([]);
+  const [fullDefendants, setFullDefendants] = useState<any[]>([]);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -132,8 +134,36 @@ export default function DocumentGenerationModal({
   const fetchAllCaseData = async () => {
     try {
       setLoadingData(true);
-      const selectedClient = clients?.[0] || null;
-      const selectedDefendant = defendants?.[0] || null;
+
+      // Fetch full client data directly from database (not from props which may be incomplete)
+      let fullClients: any[] = [];
+      if (clients.length > 0) {
+        const clientIds = clients.map(c => c.id);
+        const { data: clientsData, error: clientsError } = await supabase
+          .from('clients')
+          .select('*')
+          .in('id', clientIds);
+
+        if (clientsError) throw clientsError;
+        fullClients = clientsData || [];
+      }
+
+      const selectedClient = fullClients?.[0] || null;
+
+      // Fetch full defendant data directly from database
+      let fullDefendants: any[] = [];
+      if (defendants.length > 0) {
+        const defendantIds = defendants.map(d => d.id);
+        const { data: defendantsData, error: defendantsError } = await supabase
+          .from('defendants')
+          .select('*')
+          .in('id', defendantIds);
+
+        if (defendantsError) throw defendantsError;
+        fullDefendants = defendantsData || [];
+      }
+
+      const selectedDefendant = fullDefendants?.[0] || null;
 
       // Fetch casefile
       const { data: casefile, error: casefileError } = await supabase
@@ -147,14 +177,14 @@ export default function DocumentGenerationModal({
 
       // Fetch medical bills
       let medicalBillsList: any[] = [];
-      if (clients.length > 0) {
+      if (fullClients.length > 0) {
         const { data: bills, error: billsError } = await supabase
           .from('medical_bills')
           .select(`
             *,
             medical_provider:medical_providers(*)
           `)
-          .in('client_id', clients.map(c => c.id));
+          .in('client_id', fullClients.map(c => c.id));
 
         if (billsError) throw billsError;
         medicalBillsList = bills || [];
@@ -169,26 +199,43 @@ export default function DocumentGenerationModal({
 
       if (logsError) throw logsError;
 
-      // Fetch first party claim
+      // Fetch first party claim (adjusters are stored directly on the claim)
       const { data: firstPartyClaim } = await supabase
         .from('first_party_claims')
-        .select('*, auto_insurance:auto_insurance(*), auto_adjusters(*)')
+        .select('*, auto_insurance:auto_insurance_id(*)')
         .eq('casefile_id', casefileId)
         .maybeSingle();
 
       // Fetch health claim
       const { data: healthClaim } = selectedClient ? await supabase
         .from('health_claims')
-        .select('*, health_insurance:health_insurance(*), health_adjusters(*)')
+        .select('*, health_insurance:health_insurance_id(*), health_adjusters(*)')
         .eq('client_id', selectedClient.id)
         .maybeSingle() : { data: null };
 
       // Fetch third party claim
-      const { data: thirdPartyClaim } = selectedDefendant ? await supabase
-        .from('third_party_claims')
-        .select('*, auto_insurance:auto_insurance(*), auto_adjusters(*)')
-        .eq('defendant_id', selectedDefendant.id)
-        .maybeSingle() : { data: null };
+      let thirdPartyClaim = null;
+      if (selectedDefendant) {
+        const { data: thirdPartyClaimData } = await supabase
+          .from('third_party_claims')
+          .select('*, auto_insurance:auto_insurance_id(*)')
+          .eq('defendant_id', selectedDefendant.id)
+          .maybeSingle();
+
+        if (thirdPartyClaimData) {
+          // Fetch auto_adjusters separately since it's a reverse relationship
+          const { data: autoAdjusters } = await supabase
+            .from('auto_adjusters')
+            .select('*')
+            .eq('third_party_claim_id', thirdPartyClaimData.id)
+            .eq('is_archived', false);
+
+          thirdPartyClaim = {
+            ...thirdPartyClaimData,
+            auto_adjusters: autoAdjusters || []
+          };
+        }
+      }
 
       const fullCaseData: CaseData = {
         casefile,
@@ -201,6 +248,9 @@ export default function DocumentGenerationModal({
         thirdPartyClaim
       };
 
+      // Store full clients and defendants for use in generate function
+      setFullClients(fullClients);
+      setFullDefendants(fullDefendants);
       setCaseData(fullCaseData);
     } catch (error) {
       console.error('❌ Error fetching case data:', error);
@@ -220,10 +270,10 @@ export default function DocumentGenerationModal({
   };
 
   const handleSelectAllClients = () => {
-    if (selectedClientIds.length === clients.length) {
+    if (selectedClientIds.length === fullClients.length) {
       setSelectedClientIds([]);
     } else {
-      setSelectedClientIds(clients.map(c => c.id));
+      setSelectedClientIds(fullClients.map(c => c.id));
     }
   };
 
@@ -299,7 +349,7 @@ export default function DocumentGenerationModal({
       } else {
         // Other per-client documents: one per client
         selectedClientIds.forEach(clientId => {
-          const client = clients.find(c => c.id === clientId);
+          const client = fullClients.find(c => c.id === clientId);
           const firstName = client?.firstName || client?.first_name || '';
           const lastName = client?.lastName || client?.last_name || '';
           statuses.push({
@@ -358,7 +408,7 @@ export default function DocumentGenerationModal({
           selectedDoc.template_type,
           templateRule.generationType,
           caseData,
-          clients,
+          fullClients,  // Use full clients from DB instead of props
           targetClientId,
           selectedDoc.name,
           specificProviderId
@@ -459,7 +509,7 @@ export default function DocumentGenerationModal({
           ) : !generating && generationStatuses.length === 0 ? (
             <>
               {/* Client Selection */}
-              {selectedDoc && templateRule && templateRule.generationType === 'per_client' && clients.length > 1 && (
+              {selectedDoc && templateRule && templateRule.generationType === 'per_client' && fullClients.length > 1 && (
                 <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-foreground">Select Clients</h3>
@@ -467,11 +517,11 @@ export default function DocumentGenerationModal({
                       onClick={handleSelectAllClients}
                       className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
                     >
-                      {selectedClientIds.length === clients.length ? 'Deselect All' : 'Select All'}
+                      {selectedClientIds.length === fullClients.length ? 'Deselect All' : 'Select All'}
                     </button>
                   </div>
                   <div className="space-y-2">
-                    {clients.map((client) => {
+                    {fullClients.map((client) => {
                       const isSelected = selectedClientIds.includes(client.id);
                       return (
                         <label
@@ -499,14 +549,14 @@ export default function DocumentGenerationModal({
               )}
 
               {/* All Clients Notice */}
-              {selectedDoc && templateRule && templateRule.generationType === 'all_clients' && clients.length > 1 && (
+              {selectedDoc && templateRule && templateRule.generationType === 'all_clients' && fullClients.length > 1 && (
                 <div className="space-y-2 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg">
                   <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
                     This document includes all clients
                   </h3>
                   <ul className="space-y-1">
-                    {clients.map((client) => (
+                    {fullClients.map((client) => (
                       <li key={client.id} className="text-sm text-muted-foreground">
                         • {(client.firstName || client.first_name || 'Client')} {(client.lastName || client.last_name || '')}
                         {(client.isDriver || client.is_driver) && ' (Driver)'}

@@ -38,13 +38,13 @@ export function EditDefendantModal({
         notes: ""
     });
 
-    const [insuranceCompanies, setInsuranceCompanies] = useState<any[]>([]);
+    const [autoInsurance, setAutoInsurance] = useState<any[]>([]);
 
     useEffect(() => {
         if (isOpen) {
-            // Fetch insurance companies
-            supabase.from('insurance_companies').select('*').order('name').then(({ data }) => {
-                if (data) setInsuranceCompanies(data);
+            // Fetch auto insurance companies
+            supabase.from('auto_insurance').select('*').order('name').then(({ data }) => {
+                if (data) setAutoInsurance(data);
             });
 
             if (defendant) {
@@ -291,7 +291,7 @@ export function EditDefendantModal({
                                     onChange={e => setFormData({ ...formData, auto_insurance_id: e.target.value })}
                                 >
                                     <option value="">Select Insurance Company</option>
-                                    {insuranceCompanies.map(company => (
+                                    {autoInsurance.map(company => (
                                         <option key={company.id} value={company.id}>
                                             {company.name}
                                         </option>

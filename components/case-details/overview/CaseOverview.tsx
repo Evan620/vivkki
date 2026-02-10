@@ -11,9 +11,11 @@ import { SettlementManagement } from "./SettlementManagement";
 interface CaseOverviewProps {
     caseDetail: CaseDetail;
     medicalBills?: any[];
+    casefileId?: string;
+    onUpdate?: () => void;
 }
 
-export function CaseOverview({ caseDetail, medicalBills = [] }: CaseOverviewProps) {
+export function CaseOverview({ caseDetail, medicalBills = [], casefileId, onUpdate }: CaseOverviewProps) {
     // Extract clients and defendants from caseDetail
     const clients = caseDetail.clients?.map(c => ({
         id: parseInt(c.id),
@@ -27,10 +29,10 @@ export function CaseOverview({ caseDetail, medicalBills = [] }: CaseOverviewProp
 
     const defendants = caseDetail.defendants?.map(d => ({
         id: parseInt(d.id),
-        first_name: d.name?.split(' ')[0] || '',
-        last_name: d.name?.split(' ').slice(1).join(' ') || '',
-        firstName: d.name?.split(' ')[0] || '',
-        lastName: d.name?.split(' ').slice(1).join(' ') || '',
+        first_name: d.first_name || '',
+        last_name: d.last_name || '',
+        firstName: d.first_name || '',
+        lastName: d.last_name || '',
     })) || [];
 
     return (
@@ -58,7 +60,7 @@ export function CaseOverview({ caseDetail, medicalBills = [] }: CaseOverviewProp
 
                 <RecentActivity caseDetail={caseDetail} />
 
-                <SettlementManagement caseDetail={caseDetail} />
+                <SettlementManagement caseDetail={caseDetail} casefileId={casefileId || caseDetail.id} onUpdate={onUpdate} />
             </div>
         </div>
     );

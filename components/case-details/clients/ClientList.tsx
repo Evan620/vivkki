@@ -4,14 +4,37 @@ import { useState, useMemo } from "react";
 import { User, Phone, Mail, MapPin, ChevronUp, ChevronDown, Edit2, Trash2, Heart, Activity, DollarSign, Car, Plus } from "lucide-react";
 import { Client, MedicalBill } from "@/types";
 import { formatCurrency } from "@/lib/calculations";
+import { AddClientModal } from "./AddClientModal";
 
 interface ClientListProps {
     clients: Client[];
     medicalBills?: MedicalBill[];
+    casefileId: string;
+    onUpdate?: () => void;
 }
 
-export function ClientList({ clients, medicalBills = [] }: ClientListProps) {
+export function ClientList({ clients, medicalBills = [], casefileId, onUpdate }: ClientListProps) {
     const [expandedClient, setExpandedClient] = useState<number | null>(clients[0]?.id || null);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingClient, setEditingClient] = useState<Client | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const handleShowToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleAddClient = () => {
+        setIsAddModalOpen(true);
+    };
+
+    const handleEditClient = (client: Client) => {
+        setEditingClient(client);
+    };
+
+    const handleUpdate = () => {
+        if (onUpdate) onUpdate();
+    };
 
     // Calculate medical bills per client
     const getClientMedicalBills = (clientId: number) => {
@@ -76,7 +99,10 @@ export function ClientList({ clients, medicalBills = [] }: ClientListProps) {
                         {clients.length} client{clients.length !== 1 ? 's' : ''} ({clients.filter(c => c.is_driver).length} driver)
                     </p>
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                <button
+                    onClick={handleAddClient}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                >
                     <Plus className="w-4 h-4" /> Add Client
                 </button>
             </div>
@@ -111,7 +137,10 @@ export function ClientList({ clients, medicalBills = [] }: ClientListProps) {
                                 >
                                     {expandedClient === client.id ? 'Collapse' : 'Expand'}
                                 </button>
-                                <button className="p-2 text-muted-foreground hover:text-primary transition-colors">
+                                <button
+                                    onClick={() => handleEditClient(client)}
+                                    className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                                >
                                     <Edit2 className="w-4 h-4" />
                                 </button>
                             </div>
@@ -296,6 +325,32 @@ export function ClientList({ clients, medicalBills = [] }: ClientListProps) {
                             <p className="text-xs text-muted-foreground">Outstanding</p>
                         </div>
                     </div>
+                </div>
+            )}
+
+            <AddClientModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                client={null}
+                casefileId={casefileId}
+                onUpdate={handleUpdate}
+                onShowToast={handleShowToast}
+            />
+
+            <AddClientModal
+                isOpen={!!editingClient}
+                onClose={() => setEditingClient(null)}
+                client={editingClient}
+                casefileId={casefileId}
+                onUpdate={handleUpdate}
+                onShowToast={handleShowToast}
+            />
+
+            {toast && (
+                <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg ${
+                    toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                }`}>
+                    {toast.message}
                 </div>
             )}
         </div>
